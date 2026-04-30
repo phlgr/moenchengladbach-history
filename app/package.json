@@ -8,12 +8,18 @@
     "dev": "bun run build:data && vite dev",
     "build": "bun run build:data && vite build",
     "start": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "format": "biome format --write src",
+    "knip": "knip"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
     "@tailwindcss/vite": "^4.2.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "knip": "^6.9.0",
+    "lefthook": "^2.1.6",
     "tailwindcss": "^4.2.4",
     "typescript": "^5.6.0"
   },

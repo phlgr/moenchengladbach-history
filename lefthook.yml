@@ -1,0 +1,15 @@
+source:
+  main: app/src
+  branches: app/src
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: cd app && bun run lint
+    format:
+      run: cd app && bun run format
+    typecheck:
+      run: cd app && bun run typecheck
+    knip:
+      run: cd app && bun run knip
