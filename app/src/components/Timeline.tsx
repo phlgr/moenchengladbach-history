@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLayerState } from "../lib/layerState";
+import { useReducedMotion } from "../lib/useReducedMotion";
 
 const START_YEAR = 1933;
 const END_YEAR = 1945;
@@ -42,6 +43,7 @@ function formatLong(iso: string): string {
 export function Timeline() {
   const { currentDate, setCurrentDate } = useLayerState();
   const [playing, setPlaying] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const idx = dateToMonthIndex(currentDate);
 
@@ -119,7 +121,12 @@ export function Timeline() {
               {showAll ? "—" : formatLong(currentDate!)}
             </span>
           </div>
-          <MonthScale current={idx} onJump={jumpToMonth} />
+          <MonthScale
+            current={idx}
+            onJump={jumpToMonth}
+            playing={playing}
+            reduceMotion={reduceMotion}
+          />
         </div>
 
         <button
@@ -142,10 +149,23 @@ export function Timeline() {
 function MonthScale({
   current,
   onJump,
+  playing,
+  reduceMotion,
 }: {
   current: number | null;
   onJump: (i: number) => void;
+  playing: boolean;
+  reduceMotion: boolean;
 }) {
+  // The thumb and played-portion bar glide between month positions
+  // during play (90 ms eases past one 80 ms tick smoothly). On a
+  // direct user jump we leave a short transition so the snap doesn't
+  // feel jarring; reduced motion shortens to instant.
+  const positionTransition = reduceMotion
+    ? "none"
+    : playing
+      ? "left 90ms linear, width 90ms linear"
+      : "left 220ms cubic-bezier(0.2, 0.7, 0.3, 1), width 220ms cubic-bezier(0.2, 0.7, 0.3, 1)";
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
@@ -246,6 +266,7 @@ function MonthScale({
           className="absolute bottom-[12px] left-0 h-px bg-sepia"
           style={{
             width: `${(current / (TOTAL_MONTHS - 1)) * 100}%`,
+            transition: positionTransition,
           }}
         />
       )}
@@ -257,6 +278,8 @@ function MonthScale({
           style={{
             left: `${(current / (TOTAL_MONTHS - 1)) * 100}%`,
             transform: "translateX(-50%)",
+            transition: positionTransition,
+            willChange: "left",
           }}
         />
       )}
