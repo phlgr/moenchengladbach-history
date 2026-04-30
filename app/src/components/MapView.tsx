@@ -563,6 +563,10 @@ export function MapView() {
             50,
             22,
           ],
+          // When the timeline ticks bring fresh features into a
+          // cluster, the radius bumps to the next step. This eases the
+          // jump so bubbles visibly breathe rather than snap.
+          "circle-radius-transition": { duration: 350, delay: 0 },
           "circle-opacity": 0.92,
         },
       });
