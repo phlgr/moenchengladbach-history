@@ -50,6 +50,120 @@ function setPoiOpacity(map: MlMap, value: number) {
   }
 }
 
+const HALO_MAX_OPACITY = 0.18;
+const FADE_IN_MS = 120;
+const FADE_OUT_MS = 400;
+// Cadence of the life-manager interval. 30 ms ≈ 33 fps — fine-grained
+// enough that a 400 ms fade-out is rendered in ~13 steps without
+// running per-frame.
+const LIFE_TICK_MS = 30;
+
+// A feature currently visible in the "recent arrivals" overlay. The
+// life manager mutates `fade` on each tick; the lifecycle phase
+// determines the direction and rate.
+//   in: fading 0 → 1 over FADE_IN_MS (just arrived)
+//   hold: fully visible while currentDate's month equals arrivalMonth
+//   out: fading 1 → 0 over FADE_OUT_MS (currentDate has moved past)
+type RecentLifeFeature = {
+  feature: GeoJSON.Feature;
+  arrivalMonth: string;
+  phase: "in" | "hold" | "out";
+  fade: number;
+  lastUpdate: number;
+};
+
+function featureKey(f: GeoJSON.Feature): string {
+  const props = f.properties as Record<string, unknown> | null;
+  const id = props?.["id"];
+  if (typeof id === "string" && id.length > 0) return id;
+  // Fallback — coordinates uniquely identify features without an `id`.
+  if (f.geometry?.type === "Point") {
+    const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates;
+    return `${lng.toFixed(6)},${lat.toFixed(6)}`;
+  }
+  return JSON.stringify(f.geometry);
+}
+
+// Render the current life-map for a theme into its `<theme>-recent`
+// source. Each feature carries its `_fade` so the layer's paint
+// expression can multiply it against the base opacity.
+function paintRecentSource(
+  map: MlMap,
+  theme: string,
+  life: Map<string, RecentLifeFeature>,
+) {
+  const src = map.getSource(`${theme}-recent`) as GeoJSONSource | undefined;
+  if (!src) return;
+  const features: GeoJSON.Feature[] = [];
+  for (const entry of life.values()) {
+    if (entry.fade <= 0 && entry.phase === "out") continue;
+    features.push({
+      ...entry.feature,
+      properties: {
+        ...(entry.feature.properties ?? {}),
+        _fade: entry.fade,
+      },
+    });
+  }
+  src.setData({ type: "FeatureCollection", features });
+}
+
+// Run the life manager interval. Each tick advances `fade` for every
+// in-flight feature in every theme; when nothing is in-flight, the
+// interval is paused. Reduced-motion short-circuits everything to a
+// single render with terminal `fade` values.
+function ensureRecentTicker(
+  map: MlMap,
+  lifeRef: React.MutableRefObject<Record<string, Map<string, RecentLifeFeature>>>,
+  tickerRef: React.MutableRefObject<number | null>,
+  reduceMotion: boolean,
+) {
+  if (reduceMotion) {
+    if (tickerRef.current != null) {
+      clearInterval(tickerRef.current);
+      tickerRef.current = null;
+    }
+    // Re-paint once with terminal values so any leftover entries flush.
+    for (const [theme, life] of Object.entries(lifeRef.current)) {
+      for (const entry of life.values()) {
+        entry.fade = entry.phase === "out" ? 0 : 1;
+        if (entry.phase === "in") entry.phase = "hold";
+      }
+      paintRecentSource(map, theme, life);
+    }
+    return;
+  }
+  if (tickerRef.current != null) return; // Already running.
+  tickerRef.current = window.setInterval(() => {
+    const now = performance.now();
+    let anyAlive = false;
+    for (const [theme, life] of Object.entries(lifeRef.current)) {
+      let mutated = false;
+      for (const [id, entry] of life) {
+        const dt = now - entry.lastUpdate;
+        entry.lastUpdate = now;
+        if (entry.phase === "in") {
+          entry.fade = Math.min(1, entry.fade + dt / FADE_IN_MS);
+          if (entry.fade >= 1) entry.phase = "hold";
+          mutated = true;
+        } else if (entry.phase === "out") {
+          entry.fade = Math.max(0, entry.fade - dt / FADE_OUT_MS);
+          mutated = true;
+          if (entry.fade <= 0) {
+            life.delete(id);
+          }
+        }
+      }
+      if (mutated) paintRecentSource(map, theme, life);
+      if (life.size > 0) anyAlive = true;
+    }
+    if (!anyAlive && tickerRef.current != null) {
+      clearInterval(tickerRef.current);
+      tickerRef.current = null;
+    }
+  }, LIFE_TICK_MS);
+}
+
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -66,6 +180,12 @@ export function MapView() {
   // Original (unfiltered) GeoJSON kept per theme so we can re-filter
   // by year without re-fetching.
   const sourceDataRef = useRef<Record<string, GeoJSON.FeatureCollection>>({});
+  // In-flight "recent" features per theme keyed by feature id. The
+  // life manager mutates the entries in place between paint frames.
+  const recentLifeRef = useRef<Record<string, Map<string, RecentLifeFeature>>>(
+    {},
+  );
+  const recentTickerRef = useRef<number | null>(null);
 
   useEffect(() => {
     selectionRef.current = selection;
@@ -328,8 +448,12 @@ export function MapView() {
         addRecentOverlay(map, theme);
       }
 
-      // Per-theme "new in this month" overlay source + layer. Empty
-      // until the timeline updates it via setData.
+      // Per-theme "new in this month" overlay. Each feature carries a
+      // `_fade` property in [0, 1] driven by the life-manager interval
+      // below; circle-opacity (halo) and circle-stroke-opacity (ring)
+      // multiply their base value by `_fade` so each ring fades in and
+      // out independently — fade-out completes even when the playhead
+      // has already moved on to a later month.
       function addRecentOverlay(map: MlMap, theme: ThemeId) {
         const colors = THEMES[theme];
         const sourceId = `${theme}-recent`;
@@ -338,14 +462,17 @@ export function MapView() {
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
         });
-        // Soft halo
         map.addLayer({
           id: `${theme}-recent-halo`,
           type: "circle",
           source: sourceId,
           paint: {
             "circle-color": colors.pointColor,
-            "circle-opacity": 0.18,
+            "circle-opacity": [
+              "*",
+              HALO_MAX_OPACITY,
+              ["coalesce", ["get", "_fade"], 0],
+            ] as any,
             "circle-blur": 0.6,
             "circle-radius": [
               "interpolate",
@@ -358,7 +485,6 @@ export function MapView() {
             ],
           },
         });
-        // Bright ring stroke marking newly arrived features
         map.addLayer({
           id: `${theme}-recent-ring`,
           type: "circle",
@@ -367,6 +493,11 @@ export function MapView() {
             "circle-color": "transparent",
             "circle-stroke-color": "#8a1f0e",
             "circle-stroke-width": 1.6,
+            "circle-stroke-opacity": [
+              "coalesce",
+              ["get", "_fade"],
+              0,
+            ] as any,
             "circle-radius": [
               "interpolate",
               ["linear"],
@@ -383,6 +514,10 @@ export function MapView() {
 
     return () => {
       cancelled = true;
+      if (recentTickerRef.current != null) {
+        clearInterval(recentTickerRef.current);
+        recentTickerRef.current = null;
+      }
       mapInstance?.remove();
       mapRef.current = null;
     };
@@ -537,34 +672,39 @@ export function MapView() {
     }
   }
 
-  // Date filter — re-feed each theme's source with the subset of
-  // features whose `date` is null (always visible) or <= currentDate.
-  // Plus a SECOND auxiliary source per theme (`<theme>-recent`) that
-  // contains only the features that arrived in the same month as
-  // currentDate. The overlay renders those as a bigger non-clustered
-  // ring + halo so the user sees what just happened on top of the
-  // cumulative cluster view.
+  // Date filter — re-feed each theme's cumulative source with the
+  // subset of features whose `date` is null (always visible) or
+  // <= currentDate. The recent overlay is driven separately by the
+  // life manager: when currentDate moves into a new month, freshly
+  // arriving features start fading in; features that were "in" or
+  // "hold" but no longer match the current month switch to "out" and
+  // fade away over FADE_OUT_MS, completing even when the playhead has
+  // already moved several months ahead.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-    function inSameMonth(d: string | null | undefined, ref: string): boolean {
-      if (!d) return false;
-      return d.slice(0, 7) === ref.slice(0, 7);
-    }
+    const now = performance.now();
 
     for (const theme of ORDERED_THEMES) {
       const original = sourceDataRef.current[theme];
       if (!original) continue;
 
+      const life =
+        recentLifeRef.current[theme] ??
+        (recentLifeRef.current[theme] = new Map());
+
       let cumulative: GeoJSON.FeatureCollection;
-      let recent: GeoJSON.FeatureCollection;
       if (currentDate === null) {
         cumulative = original;
-        recent = { type: "FeatureCollection", features: [] };
+        // No recent overlay in "show all" — kill any in-flight rings.
+        life.clear();
       } else {
+        const curMonth = currentDate.slice(0, 7);
         const cumFeatures: GeoJSON.Feature[] = [];
-        const recentFeatures: GeoJSON.Feature[] = [];
         for (const f of original.features) {
           const d = (f.properties as Record<string, unknown> | null)?.["date"];
           const ds = typeof d === "string" ? d : null;
@@ -574,19 +714,52 @@ export function MapView() {
           }
           if (ds <= currentDate) {
             cumFeatures.push(f);
-            if (inSameMonth(ds, currentDate)) recentFeatures.push(f);
+            const m = ds.slice(0, 7);
+            if (m === curMonth) {
+              const id = featureKey(f);
+              const existing = life.get(id);
+              if (!existing) {
+                life.set(id, {
+                  feature: f,
+                  arrivalMonth: m,
+                  phase: reduceMotion ? "hold" : "in",
+                  fade: reduceMotion ? 1 : 0,
+                  lastUpdate: now,
+                });
+              } else if (existing.arrivalMonth !== m) {
+                // Backwards user jump landed back on this feature's
+                // own month — restart the lifecycle.
+                existing.arrivalMonth = m;
+                existing.phase = reduceMotion ? "hold" : "in";
+                existing.fade = reduceMotion ? 1 : existing.fade;
+                existing.lastUpdate = now;
+              }
+            }
           }
         }
         cumulative = { type: "FeatureCollection", features: cumFeatures };
-        recent = { type: "FeatureCollection", features: recentFeatures };
+
+        // Anything in the life-map whose arrival month no longer
+        // matches the current month should start fading out — unless
+        // it's already out.
+        for (const [id, entry] of life) {
+          if (entry.arrivalMonth !== curMonth && entry.phase !== "out") {
+            entry.phase = "out";
+            entry.lastUpdate = now;
+            if (reduceMotion) {
+              life.delete(id);
+            }
+          }
+        }
       }
+
       const cumSrc = map.getSource(theme) as GeoJSONSource | undefined;
       if (cumSrc) cumSrc.setData(cumulative);
-      const recentSrc = map.getSource(`${theme}-recent`) as
-        | GeoJSONSource
-        | undefined;
-      if (recentSrc) recentSrc.setData(recent);
+
+      paintRecentSource(map, theme, life);
     }
+
+    ensureRecentTicker(map, recentLifeRef, recentTickerRef, reduceMotion);
   }, [currentDate]);
 
   // Cinematic deportation-mode transition
