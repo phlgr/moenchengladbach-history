@@ -60,6 +60,86 @@
       "address": "Preyerstraße, Mönchengladbach",
       "description": "Auf dem Friedhof Preyerstraße sind 90 ausländische Zwangsarbeiter:innen aus der NS-Zeit beerdigt. 2019 wurde durch Schüler des Hugo-Junkers-Gymnasiums eine Informationstafel zur Erinnerung enthüllt.",
       "source_url": "https://www.aktive-buergerschaft.de/moenchengladbach-schueler-erinnern-an-zwangsarbeiter-in-der-ns-zeit/"
+    },
+    {
+      "id": "ns-bunker-erzberger",
+      "name": "Schlageter-Hochbunker Erzberger Straße",
+      "category": "bunker",
+      "lat": 51.19305,
+      "lng": 6.44485,
+      "address": "Erzbergerstraße, Hardterbroich-Pesch",
+      "description": "Während des Zweiten Weltkriegs als Luftschutzbunker erbaut; in der NS-Zeit nach dem Freikorpskämpfer Albert Leo Schlageter benannt. Einer von rund 11 dokumentierten Hochbunkern in Mönchengladbach.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-alter-markt",
+      "name": "Hochbunker Kapuzinerplatz / Alter Markt",
+      "category": "bunker",
+      "lat": 51.19470,
+      "lng": 6.43131,
+      "address": "Alter Markt / Kapuzinerplatz, Stadtmitte",
+      "description": "Im Zweiten Weltkrieg unterhalb des Alten Marktes / Kapuzinerplatzes errichteter Luftschutzbunker zum Schutz der Innenstadtbevölkerung. Heute überbaut.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-hbf-rheydt",
+      "name": "Hochbunker Rheydt Hbf",
+      "category": "bunker",
+      "lat": 51.16323,
+      "lng": 6.43967,
+      "address": "Rheydt Hauptbahnhof",
+      "description": "Während des Zweiten Weltkriegs in Bahnhofsnähe errichteter Luftschutzbunker. Mönchengladbach war als Eisenbahnknotenpunkt strategisches Ziel alliierter Luftangriffe.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-geneicken",
+      "name": "Hochbunker Geneicken",
+      "category": "bunker",
+      "lat": 51.17458,
+      "lng": 6.47146,
+      "address": "Geneicken, Bonnenbroich-Geneicken",
+      "description": "NS-zeitlicher Luftschutzbunker im Stadtteil Geneicken. Dokumentiert in lokalhistorischen Bunker-Archiven; in der Ortschaft sollen zwei Hochbunker existiert haben.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-eicken",
+      "name": "Hochbunker Eicken",
+      "category": "bunker",
+      "lat": 51.20493,
+      "lng": 6.44590,
+      "address": "Eicken, Nordstadt",
+      "description": "Luftschutzbunker im Stadtteil Eicken aus der Zeit des Zweiten Weltkriegs. Eicken war als dichtbesiedeltes Wohnviertel besonders luftkriegsgefährdet.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-waldhausen",
+      "name": "Hochbunker Waldhausen",
+      "category": "bunker",
+      "lat": 51.19595,
+      "lng": 6.41161,
+      "address": "Waldhausen, Nordstadt",
+      "description": "NS-zeitlicher Luftschutzbunker im Stadtteil Waldhausen. Errichtet im Rahmen des sogenannten 'Führer-Sofortprogramms' zum Schutz der Zivilbevölkerung vor alliierten Bombenangriffen.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-wanlo",
+      "name": "Hochbunker Wanlo",
+      "category": "bunker",
+      "lat": 51.09500,
+      "lng": 6.41648,
+      "address": "Wanlo, Süden",
+      "description": "Luftschutzbunker im südlichen Stadtteil Wanlo aus der NS-Zeit. Trotz Randlage in den Schutz-Bauplänen berücksichtigt.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-windberg",
+      "name": "Hochbunker Windberg",
+      "category": "bunker",
+      "lat": 51.20713,
+      "lng": 6.41850,
+      "address": "Windberg, Nordstadt",
+      "description": "Im Zweiten Weltkrieg errichteter Hochbunker im Stadtteil Windberg. Nach 1945 von den Briten teilweise gesprengt; in den späten 1950er Jahren mit Wohnungen umbaut, sodass das Bauwerk heute äußerlich kaum noch als Bunker erkennbar ist.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
     }
   ]
 }

@@ -26,11 +26,13 @@ OVERRIDES = ROOT / "overrides"
 OUT_DATA = ROOT / "app" / "public" / "data"
 OUT_CONTENT = OUT_DATA / "content"
 
-NS_KEYWORDS = re.compile(
-    r"(bunker|luftschutz|hochbunk|synagog|mahnm|gedenk|kriegerdenkm|"
-    r"opfer|1933|1945|reichspogrom|stolperschw|zwangsarbeit|"
-    r"jüdisch|judisch|deportier|nationalsoz|widerstand|gefallen|"
-    r"krieg)",
+# Strict keywords — only listed monuments matching one of these are
+# treated as NS-era related. Generic "Kriegerdenkmal" (mostly WW1) and
+# "Gedenkbüste" (often imperial-era) are deliberately excluded.
+NS_KEYWORDS_STRICT = re.compile(
+    r"(bunker|luftschutz|hochbunk|synagog|reichspogrom|stolperschw|"
+    r"zwangsarbeit|jüdisch|judisch|deportier|nationalsoz|widerstand|"
+    r"konzentrationsl|opfer\s+des|kriegsgefangen)",
     re.I,
 )
 
@@ -147,17 +149,17 @@ def collect_ns_baudenkmaeler() -> list[dict]:
             e.get("description", ""),
             e.get("address", ""),
         ])
-        if not NS_KEYWORDS.search(text):
+        if not NS_KEYWORDS_STRICT.search(text):
             continue
         bez = e.get("bezeichnung", "").lower()
         if "luftschutz" in bez or "bunker" in bez:
             cat = "bunker"
         elif "jüdisch" in bez or "synagog" in bez:
             cat = "jewish_cemetery" if "friedhof" in bez else "jewish_site"
-        elif "krieg" in bez or "gefallen" in bez:
-            cat = "war_memorial"
+        elif "zwangsarbeit" in bez:
+            cat = "forced_labor"
         else:
-            cat = "memorial_other"
+            cat = "ns_memorial"
         out.append({
             "id": f"bd-{e['id']}",
             "name": e.get("bezeichnung") or e.get("name") or e.get("address", ""),

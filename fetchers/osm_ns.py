@@ -38,13 +38,24 @@ area["name"="Mönchengladbach"]["boundary"="administrative"]->.a;
 out tags center;
 """
 
-NS_KEYWORDS = re.compile(
-    r"(bunker|luftschutz|hochbunk|synagog|mahnm|gedenk|kriegerdenkm|"
-    r"opfer|1933|1945|reichspogrom|stolperschw|zwangsarbeit|"
-    r"jüdisch|judisch|deportier|nationalsoz|widerstand|gefallen|"
-    r"krieg)",
+# Keywords that confidently mark an entry as NS-regime-related.
+# Deliberately *narrow* — generic "krieg" and "kriegerdenkmal" matches
+# almost any village WW1 memorial and are excluded.
+NS_KEYWORDS_STRICT = re.compile(
+    r"(bunker|luftschutz|hochbunk|synagog|reichspogrom|stolperschw|"
+    r"zwangsarbeit|jüdisch|judisch|deportier|nationalsoz|widerstand|"
+    r"konzentrationsl|opfer\s+des|kriegsgefangen)",
     re.I,
 )
+
+# Looser markers — only treat as NS if combined with a WW2-era date,
+# i.e. these names alone aren't enough to qualify.
+NS_KEYWORDS_LOOSE = re.compile(
+    r"(mahnm|gedenk|kriegerdenkm|gefallen)",
+    re.I,
+)
+
+WW2_DATES = re.compile(r"(193[3-9]|194[0-5]|2\.\s*Weltkrieg|II\.\s*Weltkrieg|Drittes\s*Reich)")
 
 
 def fetch() -> dict:
@@ -59,9 +70,9 @@ def fetch() -> dict:
 
 
 def is_ns_related(tags: dict[str, str]) -> tuple[bool, str]:
-    """Return (matches, category). category is one of:
-    war_memorial, synagogue_memorial, jewish_cemetery, bunker,
-    pow_camp_memorial, stolperschwelle, plaque, other.
+    """Return (matches, category) for entries that are *specifically*
+    NS-regime-related. Excludes WW1-only memorials, wayside crosses,
+    and 19th-century imperial monuments.
     """
     mt = tags.get("memorial:type", "")
     mem = tags.get("memorial", "")
@@ -69,37 +80,55 @@ def is_ns_related(tags: dict[str, str]) -> tuple[bool, str]:
     mil = tags.get("military", "")
     name = tags.get("name", "")
     inscr = tags.get("inscription", "")
+    desc = tags.get("description", "")
 
     if mt == "stolperstein" or mem == "stolperstein":
         return False, ""
 
+    # Wayside crosses & shrines are almost never NS-Orte.
+    if hist in {"wayside_cross", "wayside_shrine", "wayside_chapel"}:
+        return False, ""
+
     if mt == "stolperschwelle" or mem == "stolperschwelle":
         return True, "stolperschwelle"
-    if mt == "war_memorial" or mem == "war_memorial":
-        return True, "war_memorial"
     if mil == "bunker":
         return True, "bunker"
 
-    text = " ".join([name, inscr, mt, mem, hist, mil])
-    if not NS_KEYWORDS.search(text):
-        return False, ""
-
+    text = " ".join([name, inscr, desc, mt, mem, hist, mil])
     low = text.lower()
-    if "synagog" in low:
-        return True, "synagogue_memorial"
-    if "jüdisch" in low or "judisch" in low:
-        return True, "jewish_cemetery" if "friedhof" in low or "cemetery" in low else "jewish_site"
-    if "bunker" in low or "luftschutz" in low:
-        return True, "bunker"
-    if "kriegsgefangen" in low:
-        return True, "pow_camp_memorial"
-    if "stolperschw" in low:
-        return True, "stolperschwelle"
-    if "krieger" in low or "gefallen" in low:
-        return True, "war_memorial"
-    if "mahnm" in low or "gedenk" in low:
-        return True, "memorial_other"
-    return True, "other"
+
+    # Strict keywords pin the category directly.
+    if NS_KEYWORDS_STRICT.search(text):
+        if "synagog" in low:
+            return True, "synagogue_memorial"
+        if "jüdisch" in low or "judisch" in low:
+            return True, (
+                "jewish_cemetery"
+                if "friedhof" in low or "cemetery" in low
+                else "jewish_site"
+            )
+        if "bunker" in low or "luftschutz" in low or "hochbunk" in low:
+            return True, "bunker"
+        if "kriegsgefangen" in low:
+            return True, "pow_camp_memorial"
+        if "stolperschw" in low:
+            return True, "stolperschwelle"
+        if "zwangsarbeit" in low:
+            return True, "forced_labor"
+        if "konzentrationsl" in low:
+            return True, "concentration_camp"
+        if "deportier" in low or "opfer des" in low or "nationalsoz" in low:
+            return True, "ns_victim_memorial"
+        if "widerstand" in low:
+            return True, "resistance_memorial"
+        return True, "ns_memorial"
+
+    # Loose keywords (Mahnmal/Gedenk/Kriegerdenkmal/Gefallen) only
+    # qualify if explicit NS-era date is present.
+    if NS_KEYWORDS_LOOSE.search(text) and WW2_DATES.search(text):
+        return True, "ns_victim_memorial"
+
+    return False, ""
 
 
 def slugify(s: str) -> str:
@@ -130,9 +159,33 @@ def main() -> None:
 
         name = tags.get("name") or tags.get("memorial:name") or ""
         if not name:
-            # synthesize a name
-            mtype = tags.get("memorial:type") or tags.get("memorial") or tags.get("historic") or "Denkmal"
-            name = mtype.replace("_", " ").title()
+            # synthesize a name from category, then from inscription/description
+            cat_label = {
+                "bunker": "Luftschutzbunker",
+                "jewish_cemetery": "Jüdischer Friedhof",
+                "jewish_site": "Gedenktafel jüdische Bürger",
+                "synagogue_memorial": "Gedenkort Synagoge",
+                "stolperschwelle": "Stolperschwelle",
+                "pow_camp_memorial": "Kriegsgefangenenlager-Denkmal",
+                "forced_labor": "Zwangsarbeit-Gedenkort",
+                "concentration_camp": "KZ-Gedenkort",
+                "ns_victim_memorial": "NS-Opfer-Gedenkort",
+                "ns_memorial": "NS-Gedenkort",
+                "resistance_memorial": "Widerstands-Gedenkort",
+            }.get(category, "")
+            if cat_label:
+                name = cat_label
+            else:
+                inscr = tags.get("inscription") or tags.get("description") or ""
+                if inscr:
+                    name = inscr.split(".")[0][:60].strip()
+                else:
+                    name = (
+                        tags.get("memorial:type")
+                        or tags.get("memorial")
+                        or tags.get("historic")
+                        or "Denkmal"
+                    ).replace("_", " ").title()
 
         osm_id = f"osm-{e['type'][0]}{e['id']}"
         slug = slugify(name)[:60]
