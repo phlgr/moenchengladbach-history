@@ -1,21 +1,31 @@
 # Mönchengladbach History
 
-Interactive map of Mönchengladbach's history — Stolpersteine first, more layers to follow. Open data only (Wikipedia CC BY-SA, OSM ODbL).
+Interactive map of Mönchengladbach 1933–1945 — Stolpersteine, NS-era sites, perpetrator biographies, renamed streets, and the deportation network of the city's Jewish population. Open data only (Wikipedia CC BY-SA, OSM ODbL, Wikidata CC0).
 
-See [PLAN.md](./PLAN.md) for the design and roadmap.
+See [PLAN.md](./PLAN.md) for the full design and roadmap.
 
 ## Stack
 
-- **Data**: Python (`uv`, `httpx`, `mwparserfromhell`) — fetches Wikipedia + OSM via official APIs.
+- **Data**: Python (`uv`, `httpx`, `mwparserfromhell`) — fetches Wikipedia, OSM (Overpass), and Wikidata via official APIs.
 - **App**: TanStack Start on Bun, MapLibre GL, Tailwind v4. Static prerender → GitHub Pages.
+- **Quality gates**: biome (lint+format), tsc, knip — wired through lefthook pre-commit.
+
+## Layers
+
+| Group | Layer | Source |
+|-------|-------|--------|
+| Stolpersteine | Stolpersteine | de-WP list pages + OSM cross-validation |
+| NS-Orte | Synagogen, Jüdische Friedhöfe, Bunker, Stolperschwellen, Zwangsarbeit & Lager, Tätergeschichte, NS-Straßennamen, Gedenkorte | OSM `historic=*` + WP narrative articles + curated overrides |
+
+Plus a **deportation mode** that animates lines from MG to ghettos and camps (Riga, Izbica, Auschwitz, Theresienstadt, …) and a **timeline (1933–1945)** that filters POIs by their earliest documented persecution date.
 
 ## Setup
 
-Uses [mise](https://mise.jdx.dev/) for tool versions:
+Uses [mise](https://mise.jdx.dev/) for tool versions (`bun`, `node`, `python`, `uv`):
 
 ```bash
-mise install        # bun, node, python, uv
-uv sync             # python deps
+mise install
+uv sync                  # python deps
 cd app && bun install
 ```
 
@@ -25,28 +35,61 @@ cd app && bun install
 cd app && bun run dev    # http://localhost:5173
 ```
 
-`bun run dev` runs the data build (`scripts/build_geojson.py`) before starting Vite, so the map always has fresh data.
+`bun run dev` runs the data build (`scripts/build_geojson.py` + `scripts/build_deportations.py`) before starting Vite, so the map always has fresh data.
 
-## Refresh data from Wikipedia / OSM
+## Refresh data from Wikipedia / OSM / Wikidata
+
+One-shot: re-run every fetcher, then rebuild the GeoJSON.
 
 ```bash
-uv run python3 fetchers/wp_stolpersteine.py     # → data/raw/stolpersteine_wp.json
-uv run python3 scripts/build_geojson.py         # → app/public/data/
+cd app && bun run fetch:all
+cd app && bun run build:data
 ```
+
+Individual fetchers (idempotent, all live under `fetchers/`):
+
+```bash
+uv run python3 fetchers/wp_stolpersteine.py        # Wikipedia Stolperstein lists
+uv run python3 fetchers/wp_baudenkmaeler.py        # Wikipedia Baudenkmäler lists
+uv run python3 fetchers/wp_narrative_ns.py         # NS narrative articles
+uv run python3 fetchers/wp_auto_curated.py         # WP cross-references for curated entries
+uv run python3 fetchers/osm_ns.py                  # OSM historic=* in MG
+uv run python3 fetchers/osm_wikipedia.py           # OSM features tagged with wikipedia=*
+uv run python3 fetchers/wikidata_ns_persons.py     # Wikidata bios for perpetrators / namesakes
+```
+
+Outputs land in `data/raw/` (gitignored). The build scripts read from `data/raw/` + `overrides/` and write to `app/public/data/`.
 
 ## Layout
 
 ```
-fetchers/      # one script per data source (Wikipedia, OSM, Wikidata)
+fetchers/      # one script per data source (WP, OSM, Wikidata) + _common.py
 data/raw/      # fetcher output (gitignored)
-overrides/     # hand-curated entries (committed)
-scripts/       # data build pipeline
+overrides/     # hand-curated entries — committed
+  ns_orte/curated.json
+  renamed_streets/curated.json
+scripts/       # data build pipeline (build_geojson.py, build_deportations.py)
 app/           # TanStack Start web app
+  src/components/   MapView, Sidebar, LayerToggle, DeportationToggle, Timeline
+  src/lib/          themes, layerState, mapStyle, useReducedMotion
+  public/data/      built GeoJSON (gitignored) + per-POI content JSON
+  public/map-assets/  basemap.pmtiles, sprites, fonts (committed)
+```
+
+## Quality checks
+
+Run on every commit via `lefthook.yml`:
+
+```bash
+cd app && bun run lint       # biome
+cd app && bun run format     # biome --write
+cd app && bun run typecheck  # tsc --noEmit
+cd app && bun run knip       # unused exports / files
 ```
 
 ## Map assets (basemap.pmtiles, sprites, fonts)
 
-These files are committed to the repo so the app works without extra downloads. To rebuild them:
+Committed to the repo so the app works without extra downloads. To rebuild:
 
 **Basemap pmtiles** — extracts a tight Mönchengladbach city layer (z=8–14) and a European overview for the deportation cinematic (z=0–7), then merges them into a single ~38 MB archive:
 
