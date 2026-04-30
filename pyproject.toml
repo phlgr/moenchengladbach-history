@@ -1,0 +1,9 @@
+[project]
+name = "moenchengladbach-history"
+version = "0.1.0"
+description = "Open-data interactive history map for Mönchengladbach"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "mwparserfromhell>=0.6.6",
+]
