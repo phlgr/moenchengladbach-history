@@ -50,6 +50,13 @@ function setPoiOpacity(map: MlMap, value: number) {
   }
 }
 
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 const HALO_MAX_OPACITY = 0.18;
 const FADE_IN_MS = 120;
 const FADE_OUT_MS = 400;
@@ -586,8 +593,12 @@ export function MapView() {
           ],
           // When the timeline ticks bring fresh features into a
           // cluster, the radius bumps to the next step. This eases the
-          // jump so bubbles visibly breathe rather than snap.
-          "circle-radius-transition": { duration: 350, delay: 0 },
+          // jump so bubbles visibly breathe rather than snap. Honors
+          // prefers-reduced-motion (instant when the user opts out).
+          "circle-radius-transition": {
+            duration: prefersReducedMotion() ? 0 : 350,
+            delay: 0,
+          },
           "circle-opacity": 0.92,
         },
       });
