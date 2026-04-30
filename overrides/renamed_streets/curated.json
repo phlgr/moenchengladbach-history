@@ -1,0 +1,31 @@
+{
+  "_doc": "Streets and squares in Mönchengladbach that were renamed during the NS-era (1933–1945) and reverted after liberation. Each entry pins to the current location and lists the NS-era name + canonical Wikipedia source. Verified entries come from the Wikipedia article 'Adolf Hitler als Namensgeber von Straßen und Plätzen', which cites a 2009 RP-Online research article ('Wie die Stadt braun wurde'). More entries to be added as the local research project widens.",
+  "entries": [
+    {
+      "id": "renamed-richard-wagner-strasse",
+      "name": "Richard-Wagner-Straße",
+      "category": "renamed_street",
+      "lat": 51.18147,
+      "lng": 6.44239,
+      "address": "Richard-Wagner-Straße, Mönchengladbach (Dahl)",
+      "ns_name": "Adolf-Hitler-Allee",
+      "ns_period": "1933–1945",
+      "description": "Heutige Richard-Wagner-Straße. Während der NS-Zeit von 1933 bis 1945 in 'Adolf-Hitler-Allee' umbenannt — eine der prominentesten ideologischen Straßenumbenennungen der Stadt. Nach der Befreiung 1945 zurückbenannt. Quelle: Wikipedia/RP-Online ('Wie die Stadt braun wurde', 2009).",
+      "source": "wp-curated",
+      "source_url": "https://de.wikipedia.org/wiki/Adolf_Hitler_als_Namensgeber_von_Stra%C3%9Fen_und_Pl%C3%A4tzen"
+    },
+    {
+      "id": "renamed-marktplatz-rheydt",
+      "name": "Marktplatz Rheydt",
+      "category": "renamed_street",
+      "lat": 51.16786,
+      "lng": 6.44572,
+      "address": "Marktplatz Rheydt",
+      "ns_name": "Adolf-Hitler-Platz",
+      "ns_period": "1933–1945",
+      "description": "Heutiger Marktplatz Rheydt. Während der NS-Zeit von 1933 bis 1945 in 'Adolf-Hitler-Platz' umbenannt; symbolische Bedeutung als Hauptplatz von Goebbels' Geburtsstadt Rheydt. Nach der Befreiung 1945 zurückbenannt. Quelle: Wikipedia/RP-Online ('Wie die Stadt braun wurde', 2009).",
+      "source": "wp-curated",
+      "source_url": "https://de.wikipedia.org/wiki/Adolf_Hitler_als_Namensgeber_von_Stra%C3%9Fen_und_Pl%C3%A4tzen"
+    }
+  ]
+}

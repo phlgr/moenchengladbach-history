@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build:data": "cd .. && uv run python3 scripts/build_geojson.py && uv run python3 scripts/build_deportations.py",
+    "fetch:all": "cd .. && uv run python3 fetchers/wp_stolpersteine.py && uv run python3 fetchers/wp_baudenkmaeler.py && uv run python3 fetchers/osm_ns.py && uv run python3 fetchers/wp_narrative_ns.py && uv run python3 fetchers/wp_auto_curated.py && uv run python3 fetchers/wikidata_ns_persons.py",
     "dev": "bun run build:data && vite dev",
     "build": "bun run build:data && vite build",
     "start": "vite preview",

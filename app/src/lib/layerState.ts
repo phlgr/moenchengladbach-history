@@ -16,6 +16,12 @@ export type LayerState = {
   /** Total deportation routes (filled once the data is loaded). */
   deportationCount: number | null;
   setDeportationCount: (n: number) => void;
+
+  /** Year cutoff for the timeline. null = "show all years". When set,
+   *  POIs are filtered to those whose `year` property is null (always
+   *  visible) or <= currentYear. Range 1933..1945. */
+  currentYear: number | null;
+  setCurrentYear: (y: number | null) => void;
 };
 
 export const LayerStateContext = createContext<LayerState | null>(null);

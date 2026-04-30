@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { MapView } from "../components/MapView";
 import { LayerToggle } from "../components/LayerToggle";
 import { DeportationToggle } from "../components/DeportationToggle";
+import { Timeline } from "../components/Timeline";
 import { LayerStateContext } from "../lib/layerState";
 import { THEMES, type ThemeId } from "../lib/themes";
 
@@ -24,6 +25,7 @@ function HomePage() {
   const [deportationCount, setDeportationCount] = useState<number | null>(
     null,
   );
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
 
   const toggle = useCallback(
     (id: ThemeId) => setActive((a) => ({ ...a, [id]: !a[id] })),
@@ -55,6 +57,8 @@ function HomePage() {
         setDeportationMode,
         deportationCount,
         setDeportationCount,
+        currentYear,
+        setCurrentYear,
       }}
     >
       <main className="relative h-screen w-screen overflow-hidden">
@@ -88,6 +92,7 @@ function HomePage() {
           />
         </header>
         <MapView />
+        {!deportationMode && <Timeline />}
       </main>
     </LayerStateContext.Provider>
   );

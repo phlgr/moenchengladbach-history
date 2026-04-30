@@ -38,6 +38,10 @@ type NsOrt = {
   source: "osm" | "baudenkmal" | "curated" | string;
   source_url?: string;
   denkmal_nummer?: string;
+  ns_name?: string;
+  ns_period?: string;
+  lifespan?: string;
+  roles?: string[];
 };
 
 export type SidebarSelection =
@@ -73,6 +77,8 @@ const CATEGORY_ICONS: Record<string, string> = {
   bunker: "M3 20 V12 L7 8 H17 L21 12 V20 Z M9 20 V14 H15 V20",
   stolperschwelle: "M4 6 H20 V18 H4 Z",
   perpetrator_site: "M4 4 H20 V20 H4 Z M4 4 L20 20 M20 4 L4 20",
+  // Renamed street: a simple street-sign rectangle with a horizontal rule
+  renamed_street: "M3 8 H21 V16 H3 Z M3 12 H21",
   forced_labor: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
   pow_camp_memorial: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
   concentration_camp: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
@@ -164,6 +170,7 @@ const THEME_LABELS: Partial<Record<ThemeId, string>> = {
   "ns-stolperschwellen": "Stolperschwelle",
   "ns-zwangsarbeit": "Zwangsarbeit & Lager",
   "ns-taeter": "Tätergeschichte",
+  "ns-strassen": "NS-Straßenname",
   "ns-gedenkorte": "Gedenkort",
 };
 
@@ -182,6 +189,7 @@ const NS_CATEGORY_LABELS: Record<string, string> = {
   ns_memorial: "NS-Gedenkort",
   resistance_memorial: "Widerstand",
   memorial_other: "Gedenkort",
+  renamed_street: "NS-Straßenname",
 };
 
 export function Sidebar({
@@ -501,6 +509,15 @@ function NsOrtView({ n }: { n: NsOrt }) {
           )}
           {n.denkmal_nummer && (
             <MetaCell label="Denkmal-Nr." value={n.denkmal_nummer} />
+          )}
+          {n.lifespan && (
+            <MetaCell label="Lebensdaten" value={n.lifespan} />
+          )}
+          {n.ns_name && (
+            <MetaCell
+              label={n.ns_period ? `NS-Name (${n.ns_period})` : "NS-Name"}
+              value={n.ns_name}
+            />
           )}
           <MetaCell
             label="Koordinaten"

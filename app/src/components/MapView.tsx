@@ -16,6 +16,7 @@ const ORDERED_THEMES: ThemeId[] = [
   "ns-stolperschwellen",
   "ns-zwangsarbeit",
   "ns-taeter",
+  "ns-strassen",
   "ns-gedenkorte",
 ];
 
@@ -57,10 +58,14 @@ export function MapView() {
     setCount,
     deportationMode,
     setDeportationCount,
+    currentYear,
   } = useLayerState();
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);
   const deportationModeRef = useRef(false);
+  // Original (unfiltered) GeoJSON kept per theme so we can re-filter
+  // by year without re-fetching.
+  const sourceDataRef = useRef<Record<string, GeoJSON.FeatureCollection>>({});
 
   useEffect(() => {
     selectionRef.current = selection;
@@ -135,9 +140,10 @@ export function MapView() {
           ORDERED_THEMES.map(async (theme) => {
             const res = await fetch(`/data/${theme}.geojson`);
             if (!res.ok) return;
-            const fc = await res.json();
+            const fc = (await res.json()) as GeoJSON.FeatureCollection;
             if (cancelled) return;
             setCount(theme, fc.features.length);
+            sourceDataRef.current[theme] = fc;
             addThemeLayers(map, theme, fc);
           }),
         );
@@ -455,6 +461,36 @@ export function MapView() {
       mapRef.current = null;
     };
   }, []);
+
+  // Year filter — re-feed each theme's source with the subset of features
+  // whose `year` is null (always visible) or <= currentYear. Done by
+  // mutating the source data because clustering is computed from the
+  // source data, not from a layer filter.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    for (const theme of ORDERED_THEMES) {
+      const original = sourceDataRef.current[theme];
+      if (!original) continue;
+      const src = map.getSource(theme) as GeoJSONSource | undefined;
+      if (!src) continue;
+      let filtered: GeoJSON.FeatureCollection;
+      if (currentYear === null) {
+        filtered = original;
+      } else {
+        filtered = {
+          type: "FeatureCollection",
+          features: original.features.filter((f) => {
+            const y = (f.properties as Record<string, unknown> | null)?.[
+              "year"
+            ];
+            return y == null || (typeof y === "number" && y <= currentYear);
+          }),
+        };
+      }
+      src.setData(filtered);
+    }
+  }, [currentYear]);
 
   // Cinematic deportation-mode transition
   useEffect(() => {

@@ -45,6 +45,40 @@ def slugify(s: str) -> str:
     return s.strip("-") or "x"
 
 
+# Year-of-persecution extraction. Each Stolperstein inscription almost
+# always contains a year next to the verb of persecution (Deportiert
+# 1942, Verhaftet 1938, Flucht 1938, Ermordet 1944, …). The earliest of
+# those is the year the person's life was decisively touched by the NS
+# state — used by the time-slider so victims appear on the map as their
+# persecution begins.
+PERSECUTION_YEAR_PATTERNS = [
+    re.compile(r"(?:Verhaftet|verhaftet)\s+(19[34][0-9])"),
+    re.compile(r"(?:Flucht|geflohen|emigriert)\s+(?:im\s+Jahr\s+)?(19[34][0-9])"),
+    re.compile(r"(?:Deportiert|deportiert|verschleppt)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
+    re.compile(r"(?:Tot|tot|ermordet|verstarb|umgekommen)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
+    re.compile(r"(?:in\s+den\s+Tod\s+getrieben|gewaltsam\s+gestorben)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
+]
+
+
+def persecution_year(stone: dict) -> int | None:
+    text = " ".join(filter(None, [
+        stone.get("inscription") or "",
+        stone.get("bio") or "",
+    ]))
+    if not text:
+        return None
+    found: list[int] = []
+    for pat in PERSECUTION_YEAR_PATTERNS:
+        for m in pat.finditer(text):
+            try:
+                year = int(m.group(1))
+                if 1933 <= year <= 1945:
+                    found.append(year)
+            except ValueError:
+                continue
+    return min(found) if found else None
+
+
 # ---------------------------------------------------------------- Stolpersteine
 
 def _prune_orphans(out_dir: Path, written: set[str]) -> None:
@@ -99,6 +133,11 @@ def build_stolpersteine() -> tuple[int, int]:
         first = stones[0]
         lat, lng = key
         names = [s["name"] for s in stones]
+        # Earliest persecution year across all stones at this address —
+        # the timeline shows the address from this year onward.
+        years = [persecution_year(s) for s in stones]
+        valid_years = [y for y in years if y is not None]
+        first_year = min(valid_years) if valid_years else None
         features.append({
             "type": "Feature",
             "id": loc_id,
@@ -109,6 +148,10 @@ def build_stolpersteine() -> tuple[int, int]:
                 "district": first.get("district"),
                 "count": len(stones),
                 "names": names[:6],
+                # year is null when no persecution date could be parsed —
+                # frontend treats those as "always visible" so we don't
+                # erase real Stolpersteine from the timeline.
+                "year": first_year,
             },
         })
         (out_dir / f"{loc_id}.json").write_text(
@@ -249,6 +292,70 @@ def collect_ns_auto() -> list[dict]:
     return json.loads(src_path.read_text())
 
 
+def collect_ns_renamed_streets() -> list[dict]:
+    """Streets/squares renamed during the NS era (1933–1945) and
+    reverted after the war. Hand-curated from cited Wikipedia
+    references to the RP-Online local-history piece 'Wie die Stadt
+    braun wurde'."""
+    src_path = OVERRIDES / "renamed_streets" / "curated.json"
+    if not src_path.exists():
+        return []
+    data = json.loads(src_path.read_text())
+    return data.get("entries", [])
+
+
+def collect_ns_persons() -> list[dict]:
+    """NS-era persons born/died in MG, harvested from Wikidata."""
+    src_path = RAW / "ns_personen.json"
+    if not src_path.exists():
+        return []
+    out: list[dict] = []
+    for p in json.loads(src_path.read_text()):
+        # Compute representative NS-era year for the timeline:
+        # - Holocaust victims → year of death
+        # - NSDAP / Widerstand → first NS-era touchpoint (1933 baseline,
+        #   or year of death if earlier than 1945)
+        year: int | None = None
+        if p.get("death"):
+            try:
+                y = int(p["death"][:4])
+                if 1933 <= y <= 1945:
+                    year = y
+            except ValueError:
+                pass
+        if year is None and "Holocaust-Opfer" not in p.get("roles", []):
+            year = 1933
+        out.append({
+            **p,
+            "year": year,
+        })
+    return out
+
+
+# When a sub-layer's entries have a clear NS-era year, the timeline
+# uses it. For categories that span the whole period (cemeteries,
+# memorials erected post-war) we leave year=null so they remain visible
+# at every slider position.
+CATEGORY_DEFAULT_YEAR: dict[str, int | None] = {
+    "destroyed_synagogue": 1938,    # Reichspogromnacht
+    "synagogue_memorial": 1938,
+    "bunker": 1941,                  # NS air-raid bunker construction phase begins
+    "stolperschwelle": None,         # post-war commemoration
+    "perpetrator_site": 1933,        # Machtergreifung anchor
+    "forced_labor": 1942,            # peak forced-labor recruitment
+    "pow_camp_memorial": 1941,
+    "concentration_camp": 1941,
+    "ns_victim_memorial": 1942,      # mid-war
+    "resistance_memorial": 1933,     # ongoing throughout NS era
+    "jewish_cemetery": None,         # pre-existing, persisted through NS
+    "jewish_site": None,
+    "ns_memorial": None,
+    "memorial_other": None,
+    "aryanization": 1938,
+    "renamed_street": 1933,
+}
+
+
 CATEGORY_TO_SUBLAYER: dict[str, str] = {
     "destroyed_synagogue": "ns-synagogen",
     "synagogue_memorial": "ns-synagogen",
@@ -261,6 +368,7 @@ CATEGORY_TO_SUBLAYER: dict[str, str] = {
     "concentration_camp": "ns-zwangsarbeit",
     "aryanization": "ns-taeter",
     "perpetrator_site": "ns-taeter",
+    "renamed_street": "ns-strassen",
     "ns_victim_memorial": "ns-gedenkorte",
     "ns_memorial": "ns-gedenkorte",
     "resistance_memorial": "ns-gedenkorte",
@@ -280,18 +388,25 @@ def build_ns_orte() -> dict[str, int]:
     written: set[str] = set()
 
     all_entries: list[dict] = []
-    all_entries.extend(collect_ns_curated())  # manual — highest priority
-    all_entries.extend(collect_ns_auto())     # auto-extracted from WP
+    all_entries.extend(collect_ns_curated())   # manual — highest priority
+    all_entries.extend(collect_ns_auto())      # auto-extracted from WP lists
+    all_entries.extend(collect_ns_renamed_streets())  # NS street namings
+    all_entries.extend(collect_ns_persons())   # Wikidata persons
     all_entries.extend(collect_ns_baudenkmaeler())
     all_entries.extend(collect_ns_osm())
     all_entries.extend(collect_ns_narrative())
 
     # de-dupe by spatial proximity within 25 m AND same category, priority
-    # curated > baudenkmal > osm (insertion order).
+    # curated > baudenkmal > osm (insertion order). Persons are exempt:
+    # they have a deterministic jitter and represent distinct individuals,
+    # so we don't want any to be merged with each other or with sites.
     keep: list[dict] = []
     for e in all_entries:
         e_lat, e_lng = e.get("lat"), e.get("lng")
         if e_lat is None or e_lng is None:
+            continue
+        if e.get("source") == "wikidata":
+            keep.append(e)
             continue
         if any(
             abs(e_lat - k["lat"]) < 0.0003
@@ -313,6 +428,20 @@ def build_ns_orte() -> dict[str, int]:
 
         cat = e.get("category", "ns_memorial")
         sublayer = CATEGORY_TO_SUBLAYER.get(cat, "ns-gedenkorte")
+        # Try to extract an explicit NS-era year from the description;
+        # otherwise fall back to the category default. null means "always
+        # visible on the timeline".
+        year: int | None = None
+        desc = e.get("description") or ""
+        for ym in re.finditer(r"\b(19[34][0-9])\b", desc):
+            try:
+                y = int(ym.group(1))
+                if 1933 <= y <= 1945:
+                    year = y if year is None else min(year, y)
+            except ValueError:
+                continue
+        if year is None:
+            year = CATEGORY_DEFAULT_YEAR.get(cat)
         feature = {
             "type": "Feature",
             "id": eid,
@@ -322,6 +451,7 @@ def build_ns_orte() -> dict[str, int]:
                 "name": e.get("name", ""),
                 "category": cat,
                 "address": e.get("address", ""),
+                "year": year,
             },
         }
         by_sublayer.setdefault(sublayer, []).append(feature)
@@ -343,6 +473,7 @@ def build_ns_orte() -> dict[str, int]:
         "ns-stolperschwellen",
         "ns-zwangsarbeit",
         "ns-taeter",
+        "ns-strassen",
         "ns-gedenkorte",
     } | set(by_sublayer):
         feats = by_sublayer.get(sublayer, [])

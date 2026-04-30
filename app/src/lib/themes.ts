@@ -6,6 +6,7 @@ export type ThemeId =
   | "ns-stolperschwellen"
   | "ns-zwangsarbeit"
   | "ns-taeter"
+  | "ns-strassen"
   | "ns-gedenkorte";
 
 type Theme = {
@@ -58,6 +59,12 @@ export const THEMES: Record<ThemeId, Theme> = {
     clusterColor: "#0f0f0f",
     pointColor: "#2a2a2a",
   },
+  "ns-strassen": {
+    label: "NS-Straßennamen",
+    group: "NS-Orte",
+    clusterColor: "#3d2d1a",
+    pointColor: "#5a3d20",
+  },
   "ns-gedenkorte": {
     label: "Gedenkorte",
     group: "NS-Orte",
@@ -85,6 +92,8 @@ export function nsCategoryToTheme(category: string): ThemeId {
       return "ns-zwangsarbeit";
     case "perpetrator_site":
       return "ns-taeter";
+    case "renamed_street":
+      return "ns-strassen";
     case "ns_victim_memorial":
     case "ns_memorial":
     case "resistance_memorial":
