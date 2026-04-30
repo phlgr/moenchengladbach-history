@@ -288,7 +288,10 @@ export function MapView() {
         center: MG_CENTER,
         zoom: MG_DEFAULT_ZOOM,
         maxBounds: MG_MAX_BOUNDS,
-        attributionControl: { compact: true },
+        // Disable the auto-mounted bottom-right attribution; we mount
+        // it manually at bottom-left so it never collides with the
+        // centered Timeline strip at the bottom of the viewport.
+        attributionControl: false,
       });
       mapInstance = map;
       mapRef.current = map;
@@ -303,6 +306,10 @@ export function MapView() {
           trackUserLocation: true,
         }),
         "top-right",
+      );
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        "bottom-left",
       );
 
       map.on("load", async () => {
@@ -323,11 +330,16 @@ export function MapView() {
         await loadDeportationLayers(map);
 
         // Watch for attribution box expand/collapse to shift timeline.
+        // MapLibre adds `maplibregl-compact-show` while the panel is
+        // expanded; absence means collapsed (just the "i" icon).
         const attribEl = document.querySelector(".maplibregl-ctrl-attrib");
         if (attribEl) {
-          attribObserver = new MutationObserver(() => {
-            setAttributionExpanded(!attribEl.classList.contains("maplibregl-compact-show"));
-          });
+          const sync = () =>
+            setAttributionExpanded(
+              attribEl.classList.contains("maplibregl-compact-show"),
+            );
+          sync();
+          attribObserver = new MutationObserver(sync);
           attribObserver.observe(attribEl, { attributes: true, attributeFilter: ["class"] });
         }
 

@@ -45,12 +45,14 @@ export function Timeline() {
   const [playing, setPlaying] = useState(false);
   const reduceMotion = useReducedMotion();
 
-  // When the user opens the attribution box it grows tall enough to
-  // bump into the timeline; lift the timeline out of the way until
-  // they close it again.
+  // The attribution control lives in the bottom-left corner; in its
+  // collapsed (compact) form it is just an "i" icon and never reaches
+  // the centered timeline. When the user expands it, the panel grows
+  // tall enough to bump into the timeline strip on narrow viewports —
+  // lift the timeline a bit until it is closed again.
   const bottomOffset = attributionExpanded
-    ? "bottom-[280px]"
-    : "sm:bottom-14";
+    ? "bottom-[88px] sm:bottom-[72px]"
+    : "bottom-3 sm:bottom-5";
 
   const idx = dateToMonthIndex(currentDate);
 
@@ -113,7 +115,7 @@ export function Timeline() {
   }
 
   return (
-    <div className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-3rem))] -translate-x-1/2`}>
+    <div className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-5rem))] -translate-x-1/2`}>
       <div className="akte-grain akte-reveal relative flex items-stretch gap-3 border border-paper-edge bg-paper-light/95 px-4 py-2.5 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
         <button
           type="button"
