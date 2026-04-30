@@ -84,36 +84,41 @@ function featureKey(f: GeoJSON.Feature): string {
   return JSON.stringify(f.geometry);
 }
 
-// Render the current life-map for a theme into its `<theme>-recent`
-// source. Each feature carries its `_fade` so the layer's paint
-// expression can multiply it against the base opacity.
-function paintRecentSource(
+// Re-feed a theme's cumulative source with the visible feature set,
+// merging `_fade` values from the in-flight life-map. The cumulative
+// source's `clusterProperties` then aggregates `_fade_max` per
+// cluster, so the recent ring lights up the cluster bubble itself
+// rather than the original lat/lng of each member.
+function paintCumulativeWithFades(
   map: MlMap,
   theme: string,
+  features: GeoJSON.Feature[],
   life: Map<string, RecentLifeFeature>,
 ) {
-  const src = map.getSource(`${theme}-recent`) as GeoJSONSource | undefined;
+  const src = map.getSource(theme) as GeoJSONSource | undefined;
   if (!src) return;
-  const features: GeoJSON.Feature[] = [];
-  for (const entry of life.values()) {
-    if (entry.fade <= 0 && entry.phase === "out") continue;
-    features.push({
-      ...entry.feature,
+  const out: GeoJSON.Feature[] = features.map((f) => {
+    const id = featureKey(f);
+    const entry = life.get(id);
+    if (!entry || entry.fade <= 0) return f;
+    return {
+      ...f,
       properties: {
-        ...(entry.feature.properties ?? {}),
+        ...(f.properties ?? {}),
         _fade: entry.fade,
       },
-    });
-  }
-  src.setData({ type: "FeatureCollection", features });
+    };
+  });
+  src.setData({ type: "FeatureCollection", features: out });
 }
 
 // Run the life manager interval. Each tick advances `fade` for every
-// in-flight feature in every theme; when nothing is in-flight, the
-// interval is paused. Reduced-motion short-circuits everything to a
-// single render with terminal `fade` values.
+// in-flight feature in every theme and re-feeds the cumulative source
+// with merged values. When nothing is in-flight, the interval is
+// paused. Reduced-motion short-circuits to terminal values.
 function ensureRecentTicker(
   map: MlMap,
+  cumulativeRef: React.MutableRefObject<Record<string, GeoJSON.Feature[]>>,
   lifeRef: React.MutableRefObject<Record<string, Map<string, RecentLifeFeature>>>,
   tickerRef: React.MutableRefObject<number | null>,
   reduceMotion: boolean,
@@ -123,13 +128,13 @@ function ensureRecentTicker(
       clearInterval(tickerRef.current);
       tickerRef.current = null;
     }
-    // Re-paint once with terminal values so any leftover entries flush.
     for (const [theme, life] of Object.entries(lifeRef.current)) {
       for (const entry of life.values()) {
         entry.fade = entry.phase === "out" ? 0 : 1;
         if (entry.phase === "in") entry.phase = "hold";
       }
-      paintRecentSource(map, theme, life);
+      const cumulative = cumulativeRef.current[theme] ?? [];
+      paintCumulativeWithFades(map, theme, cumulative, life);
     }
     return;
   }
@@ -154,7 +159,10 @@ function ensureRecentTicker(
           }
         }
       }
-      if (mutated) paintRecentSource(map, theme, life);
+      if (mutated) {
+        const cumulative = cumulativeRef.current[theme] ?? [];
+        paintCumulativeWithFades(map, theme, cumulative, life);
+      }
       if (life.size > 0) anyAlive = true;
     }
     if (!anyAlive && tickerRef.current != null) {
@@ -180,6 +188,11 @@ export function MapView() {
   // Original (unfiltered) GeoJSON kept per theme so we can re-filter
   // by year without re-fetching.
   const sourceDataRef = useRef<Record<string, GeoJSON.FeatureCollection>>({});
+  // The currently-visible (cumulative) feature set per theme — the
+  // subset of `sourceDataRef` whose date is null or <= currentDate.
+  // Recomputed only when `currentDate` changes; the life manager
+  // re-feeds it to the source on each tick with merged `_fade` values.
+  const cumulativeRef = useRef<Record<string, GeoJSON.Feature[]>>({});
   // In-flight "recent" features per theme keyed by feature id. The
   // life manager mutates the entries in place between paint frames.
   const recentLifeRef = useRef<Record<string, Map<string, RecentLifeFeature>>>(
@@ -448,65 +461,57 @@ export function MapView() {
         addRecentOverlay(map, theme);
       }
 
-      // Per-theme "new in this month" overlay. Each feature carries a
-      // `_fade` property in [0, 1] driven by the life-manager interval
-      // below; circle-opacity (halo) and circle-stroke-opacity (ring)
-      // multiply their base value by `_fade` so each ring fades in and
-      // out independently — fade-out completes even when the playhead
-      // has already moved on to a later month.
+      // Per-theme "new in this month" overlay. Reads from the same
+      // source as the cluster/point layers so the ring lights up at
+      // whatever spot the feature is currently rendered — the cluster
+      // bubble at low zoom, the individual point at high zoom. The
+      // `_fade` is set per-feature and aggregated as `_fade_max` on
+      // clusters via clusterProperties on the source.
       function addRecentOverlay(map: MlMap, theme: ThemeId) {
         const colors = THEMES[theme];
-        const sourceId = `${theme}-recent`;
-        if (map.getSource(sourceId)) return;
-        map.addSource(sourceId, {
-          type: "geojson",
-          data: { type: "FeatureCollection", features: [] },
-        });
+        const opacityFade: any = [
+          "case",
+          ["has", "point_count"],
+          ["coalesce", ["get", "_fade_max"], 0],
+          ["coalesce", ["get", "_fade"], 0],
+        ];
+        const haloRadius: any = [
+          "case",
+          ["has", "point_count"],
+          // For clusters, hug the cluster bubble (point_count steps
+          // mirror the `${theme}-clusters` layer's circle-radius) plus
+          // a halo offset.
+          ["step", ["get", "point_count"], 21, 10, 25, 50, 30],
+          ["interpolate", ["linear"], ["zoom"], 10, 14, 14, 22],
+        ];
+        const ringRadius: any = [
+          "case",
+          ["has", "point_count"],
+          ["step", ["get", "point_count"], 16, 10, 20, 50, 25],
+          ["interpolate", ["linear"], ["zoom"], 10, 7, 14, 11],
+        ];
+
         map.addLayer({
           id: `${theme}-recent-halo`,
           type: "circle",
-          source: sourceId,
+          source: theme,
           paint: {
             "circle-color": colors.pointColor,
-            "circle-opacity": [
-              "*",
-              HALO_MAX_OPACITY,
-              ["coalesce", ["get", "_fade"], 0],
-            ] as any,
+            "circle-opacity": ["*", HALO_MAX_OPACITY, opacityFade] as any,
             "circle-blur": 0.6,
-            "circle-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              10,
-              14,
-              14,
-              22,
-            ],
+            "circle-radius": haloRadius,
           },
         });
         map.addLayer({
           id: `${theme}-recent-ring`,
           type: "circle",
-          source: sourceId,
+          source: theme,
           paint: {
             "circle-color": "transparent",
             "circle-stroke-color": "#8a1f0e",
             "circle-stroke-width": 1.6,
-            "circle-stroke-opacity": [
-              "coalesce",
-              ["get", "_fade"],
-              0,
-            ] as any,
-            "circle-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              10,
-              7,
-              14,
-              11,
-            ],
+            "circle-stroke-opacity": opacityFade,
+            "circle-radius": ringRadius,
           },
         });
       }
@@ -540,7 +545,23 @@ export function MapView() {
       type: "geojson",
       data: fc,
       ...(cluster
-        ? { cluster: true, clusterRadius: 40, clusterMaxZoom: 14 }
+        ? {
+            cluster: true,
+            clusterRadius: 40,
+            clusterMaxZoom: 14,
+            // Aggregate the maximum `_fade` across leaves so the
+            // recent-overlay ring sits on the cluster bubble itself
+            // (instead of at the original lat/lng of each member,
+            // which would be hidden inside the cluster). The cluster
+            // bubble lights up while any of its features are still
+            // fading.
+            clusterProperties: {
+              _fade_max: [
+                ["max", ["accumulated"], ["get", "_fade_max"]],
+                ["coalesce", ["get", "_fade"], 0],
+              ],
+            },
+          }
         : { cluster: false }),
     });
 
@@ -701,23 +722,23 @@ export function MapView() {
         recentLifeRef.current[theme] ??
         (recentLifeRef.current[theme] = new Map());
 
-      let cumulative: GeoJSON.FeatureCollection;
+      let cumulativeFeatures: GeoJSON.Feature[];
       if (currentDate === null) {
-        cumulative = original;
+        cumulativeFeatures = original.features;
         // No recent overlay in "show all" — kill any in-flight rings.
         life.clear();
       } else {
         const curMonth = currentDate.slice(0, 7);
-        const cumFeatures: GeoJSON.Feature[] = [];
+        cumulativeFeatures = [];
         for (const f of original.features) {
           const d = (f.properties as Record<string, unknown> | null)?.["date"];
           const ds = typeof d === "string" ? d : null;
           if (ds == null) {
-            cumFeatures.push(f);
+            cumulativeFeatures.push(f);
             continue;
           }
           if (ds <= currentDate) {
-            cumFeatures.push(f);
+            cumulativeFeatures.push(f);
             const m = ds.slice(0, 7);
             if (m === curMonth) {
               const id = featureKey(f);
@@ -741,7 +762,6 @@ export function MapView() {
             }
           }
         }
-        cumulative = { type: "FeatureCollection", features: cumFeatures };
 
         // Anything in the life-map whose arrival month no longer
         // matches the current month should start fading out — unless
@@ -757,13 +777,17 @@ export function MapView() {
         }
       }
 
-      const cumSrc = map.getSource(theme) as GeoJSONSource | undefined;
-      if (cumSrc) cumSrc.setData(cumulative);
-
-      paintRecentSource(map, theme, life);
+      cumulativeRef.current[theme] = cumulativeFeatures;
+      paintCumulativeWithFades(map, theme, cumulativeFeatures, life);
     }
 
-    ensureRecentTicker(map, recentLifeRef, recentTickerRef, reduceMotion);
+    ensureRecentTicker(
+      map,
+      cumulativeRef,
+      recentLifeRef,
+      recentTickerRef,
+      reduceMotion,
+    );
   }, [currentDate]);
 
   // Cinematic deportation-mode transition
