@@ -140,7 +140,7 @@ export function Timeline() {
               style={{
                 display: "inline-grid",
                 gridTemplateAreas: '"stack"',
-                fontSize: "1.45rem",
+                fontSize: "1.2rem",
                 lineHeight: 1,
                 color:
                   displayedDate === null
