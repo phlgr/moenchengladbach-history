@@ -1,20 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, type SidebarSelection } from "./Sidebar";
+import { LayerToggle } from "./LayerToggle";
 import { createMapStyle } from "../lib/mapStyle";
+import { THEMES, type ThemeId } from "../lib/themes";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
+
+const ORDERED_THEMES: ThemeId[] = ["stolpersteine", "baudenkmaeler"];
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
-  const [count, setCount] = useState<number | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selectedIdRef = useRef<string | null>(null);
+  const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
+  const [active, setActive] = useState<Record<ThemeId, boolean>>({
+    stolpersteine: true,
+    baudenkmaeler: true,
+  });
+  const [selection, setSelection] = useState<SidebarSelection>(null);
+  const selectionRef = useRef<SidebarSelection>(null);
 
   useEffect(() => {
-    selectedIdRef.current = selectedId;
-  }, [selectedId]);
+    selectionRef.current = selection;
+  }, [selection]);
+
+  // Sync layer visibility with `active`
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    for (const theme of ORDERED_THEMES) {
+      const visible = active[theme] ? "visible" : "none";
+      for (const lid of [
+        `${theme}-clusters`,
+        `${theme}-cluster-count`,
+        `${theme}-points`,
+        `${theme}-points-selected`,
+      ]) {
+        if (map.getLayer(lid)) {
+          map.setLayoutProperty(lid, "visibility", visible);
+        }
+      }
+    }
+  }, [active]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -52,12 +79,46 @@ export function MapView() {
       );
 
       map.on("load", async () => {
-        const res = await fetch("/data/stolpersteine.geojson");
-        const fc = await res.json();
-        if (cancelled) return;
-        setCount(fc.features.length);
+        await Promise.all(
+          ORDERED_THEMES.map(async (theme) => {
+            const res = await fetch(`/data/${theme}.geojson`);
+            if (!res.ok) return;
+            const fc = await res.json();
+            if (cancelled) return;
+            setCounts((prev) => ({ ...prev, [theme]: fc.features.length }));
+            addThemeLayers(map, theme, fc);
+          }),
+        );
 
-        map.addSource("stolpersteine", {
+        // Empty-area click closes the sidebar
+        map.on("click", (e) => {
+          const layers = ORDERED_THEMES.flatMap((t) => [
+            `${t}-points`,
+            `${t}-clusters`,
+          ]).filter((l) => map.getLayer(l));
+          const hits = map.queryRenderedFeatures(e.point, { layers });
+          if (hits.length === 0 && selectionRef.current !== null) {
+            setSelection(null);
+            for (const t of ORDERED_THEMES) {
+              if (map.getLayer(`${t}-points-selected`)) {
+                map.setFilter(`${t}-points-selected`, [
+                  "==",
+                  ["get", "id"],
+                  "",
+                ]);
+              }
+            }
+          }
+        });
+      });
+
+      function addThemeLayers(
+        map: MlMap,
+        theme: ThemeId,
+        fc: GeoJSON.FeatureCollection,
+      ) {
+        const colors = THEMES[theme];
+        map.addSource(theme, {
           type: "geojson",
           data: fc,
           cluster: true,
@@ -66,20 +127,20 @@ export function MapView() {
         });
 
         map.addLayer({
-          id: "stolpersteine-clusters",
+          id: `${theme}-clusters`,
           type: "circle",
-          source: "stolpersteine",
+          source: theme,
           filter: ["has", "point_count"],
           paint: {
-            "circle-color": "#8b7355",
+            "circle-color": colors.clusterColor,
             "circle-stroke-color": "#faf8f5",
             "circle-stroke-width": 2,
             "circle-radius": [
               "step",
               ["get", "point_count"],
-              14,
+              13,
               10,
-              18,
+              17,
               50,
               22,
             ],
@@ -88,30 +149,25 @@ export function MapView() {
         });
 
         map.addLayer({
-          id: "stolpersteine-cluster-count",
+          id: `${theme}-cluster-count`,
           type: "symbol",
-          source: "stolpersteine",
+          source: theme,
           filter: ["has", "point_count"],
           layout: {
             "text-field": ["get", "point_count_abbreviated"],
             "text-font": ["Noto Sans Regular"],
-            "text-size": 12,
+            "text-size": 11,
           },
           paint: { "text-color": "#faf8f5" },
         });
 
         map.addLayer({
-          id: "stolpersteine-points",
+          id: `${theme}-points`,
           type: "circle",
-          source: "stolpersteine",
+          source: theme,
           filter: ["!", ["has", "point_count"]],
           paint: {
-            "circle-color": [
-              "case",
-              ["==", ["get", "id"], ["literal", ""]],
-              "#3a3530",
-              "#a0522d",
-            ],
+            "circle-color": colors.pointColor,
             "circle-stroke-color": "#faf8f5",
             "circle-stroke-width": 1.5,
             "circle-radius": [
@@ -119,21 +175,20 @@ export function MapView() {
               ["linear"],
               ["zoom"],
               12,
-              5,
+              4,
               16,
-              8,
+              7,
             ],
           },
         });
 
-        // Highlight ring for selected point
         map.addLayer({
-          id: "stolpersteine-points-selected",
+          id: `${theme}-points-selected`,
           type: "circle",
-          source: "stolpersteine",
+          source: theme,
           filter: ["==", ["get", "id"], ""],
           paint: {
-            "circle-color": "#a0522d",
+            "circle-color": colors.pointColor,
             "circle-stroke-color": "#3a3530",
             "circle-stroke-width": 2.5,
             "circle-radius": [
@@ -148,49 +203,39 @@ export function MapView() {
           },
         });
 
-        map.on("click", "stolpersteine-clusters", (e) => {
+        map.on("click", `${theme}-clusters`, (e) => {
           const f = e.features?.[0];
           if (!f) return;
           const clusterId = f.properties?.cluster_id;
-          const src = map.getSource("stolpersteine") as GeoJSONSource;
+          const src = map.getSource(theme) as GeoJSONSource;
           src.getClusterExpansionZoom(clusterId).then((zoom) => {
             const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates;
             map.easeTo({ center: [lng, lat], zoom });
           });
         });
 
-        map.on("click", "stolpersteine-points", (e) => {
+        map.on("click", `${theme}-points`, (e) => {
           const f = e.features?.[0];
           if (!f) return;
           const id = f.properties?.id as string;
           const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates;
-          setSelectedId(id);
-          map.setFilter("stolpersteine-points-selected", ["==", ["get", "id"], id]);
+          setSelection({ theme, id });
+          // clear selection rings on other themes
+          for (const t of ORDERED_THEMES) {
+            map.setFilter(`${t}-points-selected`, [
+              "==",
+              ["get", "id"],
+              t === theme ? id : "",
+            ]);
+          }
           map.easeTo({
             center: [lng, lat],
-            offset: [
-              -Math.min(window.innerWidth * 0.25, 210),
-              0,
-            ],
+            offset: [-Math.min(window.innerWidth * 0.25, 210), 0],
             duration: 600,
           });
         });
 
-        // Empty-area click closes the sidebar (only if no feature was hit)
-        map.on("click", (e) => {
-          const hits = map.queryRenderedFeatures(e.point, {
-            layers: ["stolpersteine-points", "stolpersteine-clusters"],
-          });
-          if (hits.length === 0 && selectedIdRef.current !== null) {
-            setSelectedId(null);
-            map.setFilter(
-              "stolpersteine-points-selected",
-              ["==", ["get", "id"], ""],
-            );
-          }
-        });
-
-        for (const lid of ["stolpersteine-clusters", "stolpersteine-points"]) {
+        for (const lid of [`${theme}-clusters`, `${theme}-points`]) {
           map.on("mouseenter", lid, () => {
             map.getCanvas().style.cursor = "pointer";
           });
@@ -198,7 +243,7 @@ export function MapView() {
             map.getCanvas().style.cursor = "";
           });
         }
-      });
+      }
     })();
 
     return () => {
@@ -208,25 +253,42 @@ export function MapView() {
     };
   }, []);
 
+  const total = (counts.stolpersteine ?? 0) + (counts.baudenkmaeler ?? 0);
+
   return (
     <>
       <div className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
-        {count !== null && (
-          <div className="pointer-events-none absolute left-4 top-20 z-10 rounded border border-sepia-light bg-paper/95 px-3 py-1 text-xs text-faded-ink shadow">
-            {count} Stolpersteine
-          </div>
-        )}
+        <div className="pointer-events-none absolute left-4 top-20 z-10 flex w-44 flex-col gap-2">
+          {total > 0 && (
+            <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 px-3 py-1 text-[11px] text-faded-ink shadow">
+              {total} POIs gesamt
+            </div>
+          )}
+          <LayerToggle
+            active={active}
+            counts={counts}
+            onToggle={(id) =>
+              setActive((a) => ({ ...a, [id]: !a[id] }))
+            }
+          />
+        </div>
       </div>
       <Sidebar
-        selectedId={selectedId}
+        selection={selection}
         onClose={() => {
-          setSelectedId(null);
-          if (mapRef.current) {
-            mapRef.current.setFilter(
-              "stolpersteine-points-selected",
-              ["==", ["get", "id"], ""],
-            );
+          setSelection(null);
+          const map = mapRef.current;
+          if (map) {
+            for (const t of ORDERED_THEMES) {
+              if (map.getLayer(`${t}-points-selected`)) {
+                map.setFilter(`${t}-points-selected`, [
+                  "==",
+                  ["get", "id"],
+                  "",
+                ]);
+              }
+            }
           }
         }}
       />

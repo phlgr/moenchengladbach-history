@@ -1,16 +1,44 @@
 import { useEffect, useState } from "react";
+import type { ThemeId } from "../lib/themes";
 
-export type StolpersteinContent = {
+type Stone = {
   id: string;
   name: string;
-  address: string;
   install_date: string | null;
   inscription: string;
   image: string | null;
   bio: string;
+};
+
+type StolpersteinGroup = {
+  kind: "stolperstein-group";
+  id: string;
+  address: string;
   district: string;
+  lat: number;
+  lng: number;
+  source_url: string;
+  stones: Stone[];
+};
+
+type BaudenkmalContent = {
+  kind: "baudenkmal";
+  id: string;
+  nummer: string;
+  name: string;
+  bezeichnung: string;
+  ortsteil: string;
+  address: string;
+  build_date: string;
+  registration_date: string;
+  description: string;
+  image: string | null;
   source_url: string;
 };
+
+export type SidebarSelection =
+  | { theme: ThemeId; id: string }
+  | null;
 
 function commonsThumb(filename: string, width = 600): string {
   const safe = filename.replace(/ /g, "_");
@@ -24,25 +52,32 @@ function commonsFilePage(filename: string): string {
   return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(safe)}`;
 }
 
+const THEME_LABELS: Record<ThemeId, string> = {
+  stolpersteine: "Stolpersteine",
+  baudenkmaeler: "Baudenkmal",
+};
+
 export function Sidebar({
-  selectedId,
+  selection,
   onClose,
 }: {
-  selectedId: string | null;
+  selection: SidebarSelection;
   onClose: () => void;
 }) {
-  const [content, setContent] = useState<StolpersteinContent | null>(null);
+  const [content, setContent] = useState<
+    StolpersteinGroup | BaudenkmalContent | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selection) return;
     let cancelled = false;
     setContent(null);
     setError(null);
     setLoading(true);
 
-    fetch(`/data/content/stolpersteine/${selectedId}.json`)
+    fetch(`/data/content/${selection.theme}/${selection.id}.json`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -61,19 +96,18 @@ export function Sidebar({
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selection]);
 
-  // Close on Esc
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selection) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, onClose]);
+  }, [selection, onClose]);
 
-  const open = selectedId !== null;
+  const open = selection !== null;
 
   return (
     <aside
@@ -85,7 +119,7 @@ export function Sidebar({
     >
       <div className="flex items-center justify-between border-b border-sepia-light px-5 py-3">
         <h2 className="font-serif text-xs uppercase tracking-widest text-sepia">
-          Stolperstein
+          {selection ? THEME_LABELS[selection.theme] : ""}
         </h2>
         <button
           type="button"
@@ -115,70 +149,153 @@ export function Sidebar({
             Fehler: {error}
           </div>
         )}
-        {content && (
-          <article>
-            {content.image && (
-              <a
-                href={commonsFilePage(content.image)}
-                target="_blank"
-                rel="noreferrer"
-                className="block aspect-[4/3] w-full overflow-hidden bg-sepia-light/40"
-              >
-                <img
-                  src={commonsThumb(content.image, 600)}
-                  alt={`Stolperstein für ${content.name}`}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              </a>
-            )}
-            <div className="px-5 py-5">
-              <h1 className="font-serif text-xl font-bold leading-tight text-ink">
-                {content.name}
-              </h1>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded-ink">
-                {content.address && <span>{content.address}</span>}
-                {content.install_date && (
-                  <span>Verlegt&nbsp;{content.install_date}</span>
-                )}
-                <span className="capitalize">
-                  Stadtbezirk&nbsp;{content.district}
-                </span>
-              </div>
-
-              {content.inscription && (
-                <pre
-                  aria-label="Inschrift"
-                  className="mt-4 whitespace-pre-wrap border-l-2 border-sepia bg-[#f4efe7] p-3 font-serif text-sm leading-snug text-ink"
-                >
-                  {content.inscription}
-                </pre>
-              )}
-
-              {content.bio && (
-                <div className="mt-5 text-[15px] leading-relaxed text-ink">
-                  {content.bio.split(/\n+/).map((p, i) => (
-                    <p key={i} className="mb-3 last:mb-0">
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded-ink">
-                <a
-                  href={content.source_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sepia underline hover:text-ink"
-                >
-                  Quelle: Wikipedia (CC&nbsp;BY-SA&nbsp;4.0)
-                </a>
-              </div>
-            </div>
-          </article>
+        {content?.kind === "stolperstein-group" && (
+          <StolpersteinGroupView g={content} />
+        )}
+        {content?.kind === "baudenkmal" && (
+          <BaudenkmalView c={content} />
         )}
       </div>
     </aside>
+  );
+}
+
+function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
+  return (
+    <article>
+      <div className="border-b border-sepia-light bg-paper px-5 py-4">
+        <h1 className="font-serif text-xl font-bold leading-tight text-ink">
+          {g.address}
+        </h1>
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded-ink">
+          <span>
+            {g.stones.length === 1
+              ? "1 Stolperstein"
+              : `${g.stones.length} Stolpersteine`}
+          </span>
+          {g.district && (
+            <span className="capitalize">Stadtbezirk&nbsp;{g.district}</span>
+          )}
+        </div>
+      </div>
+      <ol className="divide-y divide-sepia-light/60">
+        {g.stones.map((s) => (
+          <li key={s.id} className="px-5 py-5">
+            <div className="flex gap-4">
+              {s.image && (
+                <a
+                  href={commonsFilePage(s.image)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block h-28 w-28 shrink-0 overflow-hidden rounded bg-sepia-light/40"
+                >
+                  <img
+                    src={commonsThumb(s.image, 240)}
+                    alt={`Stolperstein für ${s.name}`}
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                </a>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="font-serif text-base font-bold leading-tight text-ink">
+                  {s.name}
+                </h2>
+                {s.install_date && (
+                  <div className="mt-0.5 text-[11px] text-faded-ink">
+                    Verlegt&nbsp;{s.install_date}
+                  </div>
+                )}
+                {s.inscription && (
+                  <pre
+                    aria-label="Inschrift"
+                    className="mt-2 whitespace-pre-wrap border-l-2 border-sepia bg-[#f4efe7] p-2 font-serif text-[12px] leading-snug text-ink"
+                  >
+                    {s.inscription}
+                  </pre>
+                )}
+              </div>
+            </div>
+            {s.bio && (
+              <div className="mt-3 text-[14px] leading-relaxed text-ink">
+                {s.bio.split(/\n+/).map((p, i) => (
+                  <p key={i} className="mb-2 last:mb-0">
+                    {p}
+                  </p>
+                ))}
+              </div>
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="px-5 py-4">
+        <SourceLink href={g.source_url} />
+      </div>
+    </article>
+  );
+}
+
+function BaudenkmalView({ c }: { c: BaudenkmalContent }) {
+  return (
+    <article>
+      {c.image && (
+        <a
+          href={commonsFilePage(c.image)}
+          target="_blank"
+          rel="noreferrer"
+          className="block aspect-[4/3] w-full overflow-hidden bg-sepia-light/40"
+        >
+          <img
+            src={commonsThumb(c.image, 600)}
+            alt={c.name}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        </a>
+      )}
+      <div className="px-5 py-5">
+        <h1 className="font-serif text-xl font-bold leading-tight text-ink">
+          {c.bezeichnung || c.name}
+        </h1>
+        {c.address && (
+          <div className="mt-1 text-sm text-faded-ink">{c.address}</div>
+        )}
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded-ink">
+          {c.ortsteil && <span>{c.ortsteil}</span>}
+          {c.build_date && <span>Bauzeit:&nbsp;{c.build_date}</span>}
+          {c.nummer && <span>Denkmal-Nr.&nbsp;{c.nummer}</span>}
+        </div>
+        {c.description && (
+          <div className="mt-5 text-[15px] leading-relaxed text-ink">
+            {c.description.split(/\n+/).map((p, i) => (
+              <p key={i} className="mb-3 last:mb-0">
+                {p}
+              </p>
+            ))}
+          </div>
+        )}
+        {c.registration_date && (
+          <div className="mt-4 text-xs text-faded-ink">
+            Eingetragen seit {c.registration_date}
+          </div>
+        )}
+        <SourceLink href={c.source_url} />
+      </div>
+    </article>
+  );
+}
+
+function SourceLink({ href }: { href: string }) {
+  return (
+    <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded-ink">
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="text-sepia underline hover:text-ink"
+      >
+        Quelle: Wikipedia (CC&nbsp;BY-SA&nbsp;4.0)
+      </a>
+    </div>
   );
 }
