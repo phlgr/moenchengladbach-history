@@ -281,6 +281,7 @@ NARRATIVE_BLOCKLIST: set[str] = {
     "Rheydt",
     "Broich (Mönchengladbach)",
     "Lürrip",
+    "Luftschutzbunker (Broich)",
 }
 
 

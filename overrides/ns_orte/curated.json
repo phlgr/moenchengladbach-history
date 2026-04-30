@@ -150,6 +150,16 @@
       "address": "Windberg, Nordstadt",
       "description": "Im Zweiten Weltkrieg errichteter Hochbunker im Stadtteil Windberg. Nach 1945 von den Briten teilweise gesprengt; in den späten 1950er Jahren mit Wohnungen umbaut, sodass das Bauwerk heute äußerlich kaum noch als Bunker erkennbar ist.",
       "source_url": "https://de.wikipedia.org/wiki/Liste_von_Bunkeranlagen_in_Nordrhein-Westfalen"
+    },
+    {
+      "id": "ns-bunker-broich",
+      "name": "Luftschutzbunker Broich",
+      "category": "bunker",
+      "lat": 51.155804,
+      "lng": 6.346548,
+      "address": "Broicher Straße 164",
+      "description": "Luftschutzbunker im Stadtteil Broich (Rheindahlen-Broich) aus dem Zweiten Weltkrieg. Baudenkmal Nr. B-171.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_Baudenkmäler_in_Mönchengladbach_(Denkmäler_A–C)"
     }
   ]
 }
