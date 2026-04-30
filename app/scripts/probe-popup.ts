@@ -19,8 +19,8 @@ await page.waitForTimeout(2500);
 const result = await page.evaluate(async () => {
   const map = (window as any).__map;
   if (!map) return { err: "no map" };
-  // jump to where NS-Orte cluster
-  map.jumpTo({ center: [6.4429, 51.1639], zoom: 14 });
+  // jump to Schloss Rheydt (Goebbels) — has image
+  map.jumpTo({ center: [6.4816, 51.1821], zoom: 16 });
   await new Promise((r) => setTimeout(r, 1500));
   const layers = map
     .getStyle()

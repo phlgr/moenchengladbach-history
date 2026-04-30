@@ -47,6 +47,20 @@ def slugify(s: str) -> str:
 
 # ---------------------------------------------------------------- Stolpersteine
 
+def _prune_orphans(out_dir: Path, written: set[str]) -> None:
+    """Remove stale .json files in `out_dir` that weren't written this run.
+
+    Avoids `rm -rf` of the directory before build, which would break Vite's
+    public-dir file watcher and cause 404s on all freshly-written files
+    until they're touched a second time.
+    """
+    if not out_dir.exists():
+        return
+    for f in out_dir.glob("*.json"):
+        if f.stem not in written:
+            f.unlink()
+
+
 def build_stolpersteine() -> tuple[int, int]:
     src_path = RAW / "stolpersteine_wp.json"
     if not src_path.exists():
@@ -54,6 +68,7 @@ def build_stolpersteine() -> tuple[int, int]:
     src = json.loads(src_path.read_text())
     out_dir = OUT_CONTENT / "stolpersteine"
     out_dir.mkdir(parents=True, exist_ok=True)
+    written: set[str] = set()
 
     groups: dict[tuple[float, float], list[dict]] = defaultdict(list)
     for e in src:
@@ -122,6 +137,7 @@ def build_stolpersteine() -> tuple[int, int]:
                 indent=2,
             )
         )
+        written.add(loc_id)
         total_stones += len(stones)
 
     fc = {"type": "FeatureCollection", "features": features}
@@ -129,6 +145,7 @@ def build_stolpersteine() -> tuple[int, int]:
     (OUT_DATA / "stolpersteine.geojson").write_text(
         json.dumps(fc, ensure_ascii=False)
     )
+    _prune_orphans(out_dir, written)
     return len(features), total_stones
 
 
@@ -252,6 +269,7 @@ def build_ns_orte() -> dict[str, int]:
     """
     out_dir = OUT_CONTENT / "ns-orte"
     out_dir.mkdir(parents=True, exist_ok=True)
+    written: set[str] = set()
 
     all_entries: list[dict] = []
     all_entries.extend(collect_ns_curated())
@@ -302,7 +320,9 @@ def build_ns_orte() -> dict[str, int]:
         (out_dir / f"{eid}.json").write_text(
             json.dumps({"kind": "ns-orte", **e}, ensure_ascii=False, indent=2)
         )
+        written.add(eid)
 
+    _prune_orphans(out_dir, written)
     OUT_DATA.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = {}
     # Always write empty FeatureCollections for known sub-layers so the
