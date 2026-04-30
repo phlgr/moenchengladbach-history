@@ -47,6 +47,26 @@ export function Timeline() {
 
   const idx = dateToMonthIndex(currentDate);
 
+  // Header label crossfade — only on user-driven jumps. During the
+  // 80 ms play loop the 150 ms animation would never finish, so we
+  // pin the displayed value to the current value and skip the fade.
+  const [displayedDate, setDisplayedDate] = useState<string | null>(
+    currentDate,
+  );
+  const [fadingOutDate, setFadingOutDate] = useState<string | null>(null);
+  useEffect(() => {
+    if (currentDate === displayedDate) return;
+    if (playing || reduceMotion) {
+      setDisplayedDate(currentDate);
+      setFadingOutDate(null);
+      return;
+    }
+    setFadingOutDate(displayedDate);
+    setDisplayedDate(currentDate);
+    const t = window.setTimeout(() => setFadingOutDate(null), 170);
+    return () => window.clearTimeout(t);
+  }, [currentDate, playing, reduceMotion, displayedDate]);
+
   useEffect(() => {
     if (!playing) return;
     let i = idx ?? 0;
@@ -109,16 +129,41 @@ export function Timeline() {
             <span
               className="akte-display tabular-nums"
               style={{
+                display: "inline-grid",
+                gridTemplateAreas: '"stack"',
                 fontSize: "1.45rem",
                 lineHeight: 1,
-                color: showAll
-                  ? "var(--color-faded)"
-                  : "var(--color-red-oxide)",
+                color:
+                  displayedDate === null
+                    ? "var(--color-faded)"
+                    : "var(--color-red-oxide)",
                 fontWeight: 500,
                 letterSpacing: "-0.005em",
               }}
             >
-              {showAll ? "—" : formatLong(currentDate!)}
+              {fadingOutDate && (
+                <span
+                  aria-hidden
+                  style={{
+                    gridArea: "stack",
+                    pointerEvents: "none",
+                    animation: "timeline-date-fade-out 150ms ease-out forwards",
+                  }}
+                >
+                  {formatLong(fadingOutDate)}
+                </span>
+              )}
+              <span
+                key={displayedDate ?? "all"}
+                style={{
+                  gridArea: "stack",
+                  animation: fadingOutDate
+                    ? "timeline-date-fade-in 150ms ease-out forwards"
+                    : undefined,
+                }}
+              >
+                {displayedDate === null ? "—" : formatLong(displayedDate)}
+              </span>
             </span>
           </div>
           <MonthScale
