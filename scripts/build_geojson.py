@@ -193,7 +193,31 @@ def collect_ns_curated() -> list[dict]:
     return data.get("entries", [])
 
 
-def build_ns_orte() -> int:
+CATEGORY_TO_SUBLAYER: dict[str, str] = {
+    "destroyed_synagogue": "ns-synagogen",
+    "synagogue_memorial": "ns-synagogen",
+    "jewish_cemetery": "ns-friedhoefe",
+    "jewish_site": "ns-friedhoefe",
+    "bunker": "ns-bunker",
+    "stolperschwelle": "ns-stolperschwellen",
+    "forced_labor": "ns-zwangsarbeit",
+    "pow_camp_memorial": "ns-zwangsarbeit",
+    "concentration_camp": "ns-zwangsarbeit",
+    "perpetrator_site": "ns-taeter",
+    "ns_victim_memorial": "ns-gedenkorte",
+    "ns_memorial": "ns-gedenkorte",
+    "resistance_memorial": "ns-gedenkorte",
+    "memorial_other": "ns-gedenkorte",
+}
+
+
+def build_ns_orte() -> dict[str, int]:
+    """Split the merged NS corpus into one GeoJSON per sub-layer.
+
+    Per-entry content JSON files are still written under content/ns-orte/
+    (single namespace) so the sidebar fetcher only needs to know the
+    category, not which sub-layer file it lives in.
+    """
     out_dir = OUT_CONTENT / "ns-orte"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -202,8 +226,8 @@ def build_ns_orte() -> int:
     all_entries.extend(collect_ns_baudenkmaeler())
     all_entries.extend(collect_ns_osm())
 
-    # de-dupe by spatial proximity within 25 m AND same category, keeping
-    # curated > baudenkmal > osm priority. (Curated comes first in the list.)
+    # de-dupe by spatial proximity within 25 m AND same category, priority
+    # curated > baudenkmal > osm (insertion order).
     keep: list[dict] = []
     for e in all_entries:
         e_lat, e_lng = e.get("lat"), e.get("lng")
@@ -219,7 +243,7 @@ def build_ns_orte() -> int:
         keep.append(e)
 
     seen_ids: set[str] = set()
-    features: list[dict] = []
+    by_sublayer: dict[str, list[dict]] = {}
     for e in keep:
         eid = e.get("id") or ""
         while eid in seen_ids or not eid:
@@ -227,32 +251,55 @@ def build_ns_orte() -> int:
         seen_ids.add(eid)
         e["id"] = eid
 
-        features.append({
+        cat = e.get("category", "ns_memorial")
+        sublayer = CATEGORY_TO_SUBLAYER.get(cat, "ns-gedenkorte")
+        feature = {
             "type": "Feature",
             "id": eid,
             "geometry": {"type": "Point", "coordinates": [e["lng"], e["lat"]]},
             "properties": {
                 "id": eid,
                 "name": e.get("name", ""),
-                "category": e.get("category", "other"),
+                "category": cat,
                 "address": e.get("address", ""),
             },
-        })
+        }
+        by_sublayer.setdefault(sublayer, []).append(feature)
+
         (out_dir / f"{eid}.json").write_text(
             json.dumps({"kind": "ns-orte", **e}, ensure_ascii=False, indent=2)
         )
 
-    fc = {"type": "FeatureCollection", "features": features}
     OUT_DATA.mkdir(parents=True, exist_ok=True)
-    (OUT_DATA / "ns-orte.geojson").write_text(json.dumps(fc, ensure_ascii=False))
-    return len(features)
+    counts: dict[str, int] = {}
+    # Always write empty FeatureCollections for known sub-layers so the
+    # frontend doesn't 404 on layers that happen to have no entries.
+    for sublayer in {
+        "ns-synagogen",
+        "ns-friedhoefe",
+        "ns-bunker",
+        "ns-stolperschwellen",
+        "ns-zwangsarbeit",
+        "ns-taeter",
+        "ns-gedenkorte",
+    } | set(by_sublayer):
+        feats = by_sublayer.get(sublayer, [])
+        fc = {"type": "FeatureCollection", "features": feats}
+        (OUT_DATA / f"{sublayer}.geojson").write_text(
+            json.dumps(fc, ensure_ascii=False)
+        )
+        counts[sublayer] = len(feats)
+    return counts
 
 
 def main() -> None:
     n_loc, n_stones = build_stolpersteine()
-    n_ns = build_ns_orte()
+    counts = build_ns_orte()
     print(f"stolpersteine: {n_loc} locations covering {n_stones} stones")
-    print(f"ns-orte:       {n_ns} features")
+    total_ns = sum(counts.values())
+    print(f"ns-orte:       {total_ns} features split into:")
+    for k in sorted(counts, key=lambda x: -counts[x]):
+        print(f"   {counts[k]:3d}  {k}")
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ type NsOrt = {
 };
 
 export type SidebarSelection =
-  | { theme: ThemeId; id: string }
+  | { theme: ThemeId; id: string; contentDir: string }
   | null;
 
 function commonsThumb(filename: string, width = 600): string {
@@ -56,24 +56,32 @@ function commonsFilePage(filename: string): string {
   return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(safe)}`;
 }
 
-const THEME_LABELS: Record<ThemeId, string> = {
+const THEME_LABELS: Partial<Record<ThemeId, string>> = {
   stolpersteine: "Stolpersteine",
-  "ns-orte": "NS-Ort",
+  "ns-synagogen": "Synagoge",
+  "ns-friedhoefe": "Jüdischer Friedhof",
+  "ns-bunker": "Bunker",
+  "ns-stolperschwellen": "Stolperschwelle",
+  "ns-zwangsarbeit": "Zwangsarbeit & Lager",
+  "ns-taeter": "Tätergeschichte",
+  "ns-gedenkorte": "Gedenkort",
 };
 
 const NS_CATEGORY_LABELS: Record<string, string> = {
   destroyed_synagogue: "Zerstörte Synagoge",
   synagogue_memorial: "Gedenkort Synagoge",
   jewish_cemetery: "Jüdischer Friedhof",
-  jewish_site: "Jüdischer Ort",
+  jewish_site: "Jüdische Gedenktafel",
   bunker: "Luftschutzbunker",
-  war_memorial: "Kriegerdenkmal",
   pow_camp_memorial: "Kriegsgefangenenlager",
   forced_labor: "Zwangsarbeit",
+  concentration_camp: "Konzentrationslager",
   perpetrator_site: "Tätergeschichte",
   stolperschwelle: "Stolperschwelle",
+  ns_victim_memorial: "NS-Opfer-Gedenkort",
+  ns_memorial: "NS-Gedenkort",
+  resistance_memorial: "Widerstand",
   memorial_other: "Gedenkort",
-  other: "Sonstiges",
 };
 
 export function Sidebar({
@@ -96,7 +104,7 @@ export function Sidebar({
     setError(null);
     setLoading(true);
 
-    fetch(`/data/content/${selection.theme}/${selection.id}.json`)
+    fetch(`/data/content/${selection.contentDir}/${selection.id}.json`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -138,7 +146,7 @@ export function Sidebar({
     >
       <div className="flex items-center justify-between border-b border-sepia-light px-5 py-3">
         <h2 className="font-serif text-xs uppercase tracking-widest text-sepia">
-          {selection ? THEME_LABELS[selection.theme] : ""}
+          {selection ? (THEME_LABELS[selection.theme] ?? "") : ""}
         </h2>
         <button
           type="button"

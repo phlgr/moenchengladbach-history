@@ -22,9 +22,11 @@ const result = await page.evaluate(async () => {
   // jump to where NS-Orte cluster
   map.jumpTo({ center: [6.4429, 51.1639], zoom: 14 });
   await new Promise((r) => setTimeout(r, 1500));
-  const feats = map.queryRenderedFeatures(undefined, {
-    layers: ["ns-orte-points"],
-  });
+  const layers = map
+    .getStyle()
+    .layers.filter((l: any) => l.id.endsWith("-points") && !l.id.includes("selected"))
+    .map((l: any) => l.id);
+  const feats = map.queryRenderedFeatures(undefined, { layers });
   if (!feats.length) return { err: "no features anywhere", zoom: map.getZoom() };
   // fire a click at the feature's pixel
   const f = feats[0];

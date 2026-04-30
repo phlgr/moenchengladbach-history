@@ -7,15 +7,30 @@ import { THEMES, type ThemeId } from "../lib/themes";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
 
-const ORDERED_THEMES: ThemeId[] = ["stolpersteine", "ns-orte"];
+const ORDERED_THEMES: ThemeId[] = [
+  "stolpersteine",
+  "ns-synagogen",
+  "ns-friedhoefe",
+  "ns-bunker",
+  "ns-stolperschwellen",
+  "ns-zwangsarbeit",
+  "ns-taeter",
+  "ns-gedenkorte",
+];
+
+/** All NS sub-themes share one content directory. */
+function contentDirFor(theme: ThemeId): string {
+  return theme === "stolpersteine" ? "stolpersteine" : "ns-orte";
+}
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
   const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
-  const [active, setActive] = useState<Record<ThemeId, boolean>>({
-    stolpersteine: true,
-    "ns-orte": true,
+  const [active, setActive] = useState<Record<ThemeId, boolean>>(() => {
+    const a = {} as Record<ThemeId, boolean>;
+    for (const t of ORDERED_THEMES) a[t] = true;
+    return a;
   });
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);
@@ -24,7 +39,6 @@ export function MapView() {
     selectionRef.current = selection;
   }, [selection]);
 
-  // Sync layer visibility with `active`
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -55,8 +69,6 @@ export function MapView() {
       ]);
       if (cancelled || !containerRef.current) return;
 
-      // Register the pmtiles:// protocol so MapLibre can read range-requested
-      // PMTiles directly from a CDN without a tile server.
       const proto = new Protocol();
       maplibregl.addProtocol("pmtiles", proto.tile);
 
@@ -98,7 +110,6 @@ export function MapView() {
           }),
         );
 
-        // Empty-area click closes the sidebar
         map.on("click", (e) => {
           const layers = ORDERED_THEMES.flatMap((t) => [
             `${t}-points`,
@@ -126,6 +137,7 @@ export function MapView() {
         fc: GeoJSON.FeatureCollection,
       ) {
         const colors = THEMES[theme];
+        if (fc.features.length === 0) return;
         map.addSource(theme, {
           type: "geojson",
           data: fc,
@@ -227,14 +239,15 @@ export function MapView() {
           if (!f) return;
           const id = f.properties?.id as string;
           const [lng, lat] = (f.geometry as GeoJSON.Point).coordinates;
-          setSelection({ theme, id });
-          // clear selection rings on other themes
+          setSelection({ theme, id, contentDir: contentDirFor(theme) });
           for (const t of ORDERED_THEMES) {
-            map.setFilter(`${t}-points-selected`, [
-              "==",
-              ["get", "id"],
-              t === theme ? id : "",
-            ]);
+            if (map.getLayer(`${t}-points-selected`)) {
+              map.setFilter(`${t}-points-selected`, [
+                "==",
+                ["get", "id"],
+                t === theme ? id : "",
+              ]);
+            }
           }
           map.easeTo({
             center: [lng, lat],
@@ -261,23 +274,23 @@ export function MapView() {
     };
   }, []);
 
-  const total = (counts.stolpersteine ?? 0) + (counts.baudenkmaeler ?? 0);
-
   return (
     <>
       <div className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
-        <div className="pointer-events-none absolute left-4 top-20 z-10 flex w-44 flex-col gap-2">
-          {total > 0 && (
-            <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 px-3 py-1 text-[11px] text-faded shadow">
-              {total} POIs gesamt
-            </div>
-          )}
+        <div className="pointer-events-none absolute left-4 top-20 z-10 flex w-52 flex-col gap-2">
           <LayerToggle
             active={active}
             counts={counts}
-            onToggle={(id) =>
-              setActive((a) => ({ ...a, [id]: !a[id] }))
+            onToggle={(id) => setActive((a) => ({ ...a, [id]: !a[id] }))}
+            onToggleGroup={(group, allOn) =>
+              setActive((a) => {
+                const next = { ...a };
+                for (const t of ORDERED_THEMES) {
+                  if (THEMES[t].group === group) next[t] = allOn;
+                }
+                return next;
+              })
             }
           />
         </div>
