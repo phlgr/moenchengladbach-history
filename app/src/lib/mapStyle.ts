@@ -117,8 +117,11 @@ export function createMapStyle(): StyleSpecification {
       protomaps: {
         type: "vector",
         url: `pmtiles://${PMTILES_URL}`,
-        attribution:
-          'Karte © <a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a> · Daten © <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+        attribution: [
+          'Karte © <a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a>',
+          '© <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+          'Inhalte © <a href="https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_M%C3%B6nchengladbach" target="_blank" rel="noreferrer">Wikipedia</a> (CC&nbsp;BY-SA&nbsp;4.0)',
+        ].join(" · "),
       },
     },
     layers: layersWithPartialCustomTheme(

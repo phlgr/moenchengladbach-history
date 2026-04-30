@@ -18,7 +18,7 @@ type Theme = {
 export const THEMES: Record<ThemeId, Theme> = {
   stolpersteine: {
     label: "Stolpersteine",
-    group: "Personen",
+    group: "Stolpersteine",
     clusterColor: "#7a5e3a",
     pointColor: "#a0522d",
   },
