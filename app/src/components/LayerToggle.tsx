@@ -1,19 +1,29 @@
 import { THEMES, type ThemeId, themesByGroup } from "../lib/themes";
+import { useLayerState } from "../lib/layerState";
 
-export function LayerToggle({
-  active,
-  counts,
-  onToggle,
-  onToggleGroup,
-}: {
-  active: Record<ThemeId, boolean>;
-  counts: Partial<Record<ThemeId, number>>;
-  onToggle: (id: ThemeId) => void;
-  onToggleGroup: (group: string, allOn: boolean) => void;
-}) {
+export function LayerToggle() {
+  const { active, counts, toggle, toggleGroup } = useLayerState();
   const groups = themesByGroup();
   return (
-    <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 shadow">
+    <div
+      className="akte-grain akte-reveal pointer-events-auto relative w-56 border border-paper-edge bg-paper-light/95 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm"
+      style={{ animationDelay: "120ms" }}
+    >
+      {/* Top index-card binding holes */}
+      <div
+        aria-hidden
+        className="flex items-center justify-around border-b border-paper-edge bg-paper-soft/70 px-4 py-1.5"
+      >
+        <span className="akte-label" style={{ fontSize: "0.52rem" }}>
+          Filtern
+        </span>
+        <span className="flex gap-3">
+          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+        </span>
+      </div>
+
       {groups.map(({ group, themes }, gi) => {
         const total = themes.reduce((n, t) => n + (counts[t] ?? 0), 0);
         const allOn = themes.every((t) => active[t]);
@@ -21,38 +31,43 @@ export function LayerToggle({
         return (
           <div
             key={group}
-            className={gi > 0 ? "border-t border-sepia-light/60" : ""}
+            className={gi > 0 ? "border-t border-paper-edge/70" : ""}
           >
             <button
               type="button"
-              onClick={() => onToggleGroup(group, !allOn)}
+              onClick={() => toggleGroup(group, !allOn)}
               aria-pressed={allOn}
-              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-widest transition-colors ${
+              className={`group flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition-colors ${
                 allOn
                   ? "text-ink"
                   : someOn
                     ? "text-faded hover:text-ink"
-                    : "text-faded/60 hover:text-ink"
+                    : "text-faded-light hover:text-ink"
               }`}
             >
               <span
                 aria-hidden
-                className="relative inline-block h-3 w-3 rounded-sm border-[1.5px] border-sepia"
+                className="relative inline-block h-3 w-3 border-[1.5px] border-sepia"
                 style={{
                   backgroundColor: allOn
                     ? "var(--color-sepia)"
                     : someOn
-                      ? "color-mix(in srgb, var(--color-sepia) 40%, transparent)"
+                      ? "color-mix(in srgb, var(--color-sepia) 45%, transparent)"
                       : "transparent",
                 }}
               />
-              <span className="flex-1">{group}</span>
-              <span className="text-[10px] tabular-nums text-faded">
+              <span
+                className="flex-1 font-mono text-[0.7rem] font-medium uppercase"
+                style={{ letterSpacing: "0.22em" }}
+              >
+                {group}
+              </span>
+              <span className="akte-meta text-[0.65rem] tabular-nums">
                 {total}
               </span>
             </button>
             {themes.length > 1 && (
-              <div className="pb-1">
+              <div className="pb-1.5">
                 {themes.map((id) => {
                   const t = THEMES[id];
                   const on = active[id];
@@ -61,12 +76,12 @@ export function LayerToggle({
                     <button
                       key={id}
                       type="button"
-                      onClick={() => onToggle(id)}
+                      onClick={() => toggle(id)}
                       aria-pressed={on}
-                      className={`flex w-full items-center gap-2 py-[3px] pl-7 pr-3 text-left text-[11px] transition-colors ${
+                      className={`flex w-full items-center gap-2.5 py-[3px] pl-9 pr-4 text-left transition-colors ${
                         on
                           ? "text-ink"
-                          : "text-faded/70 hover:text-ink"
+                          : "text-faded-light hover:text-ink"
                       }`}
                     >
                       <span
@@ -77,9 +92,19 @@ export function LayerToggle({
                           borderColor: t.pointColor,
                         }}
                       />
-                      <span className="flex-1">{t.label}</span>
+                      <span
+                        className="flex-1"
+                        style={{
+                          fontFamily: "var(--font-serif)",
+                          fontSize: "0.86rem",
+                          fontWeight: 400,
+                          letterSpacing: "0",
+                        }}
+                      >
+                        {t.label}
+                      </span>
                       {c !== undefined && (
-                        <span className="text-[10px] tabular-nums text-faded/80">
+                        <span className="akte-meta text-[0.6rem] tabular-nums opacity-80">
                           {c}
                         </span>
                       )}

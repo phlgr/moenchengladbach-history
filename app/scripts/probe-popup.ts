@@ -19,14 +19,12 @@ await page.waitForTimeout(2500);
 const result = await page.evaluate(async () => {
   const map = (window as any).__map;
   if (!map) return { err: "no map" };
-  // jump to Schloss Rheydt (Goebbels) — has image
-  map.jumpTo({ center: [6.4816, 51.1821], zoom: 16 });
+  // jump to Aachener Str. 2 (multi-stone Stolperstein group)
+  map.jumpTo({ center: [6.4312, 51.1962], zoom: 17 });
   await new Promise((r) => setTimeout(r, 1500));
-  const layers = map
-    .getStyle()
-    .layers.filter((l: any) => l.id.endsWith("-points") && !l.id.includes("selected"))
-    .map((l: any) => l.id);
-  const feats = map.queryRenderedFeatures(undefined, { layers });
+  const feats = map.queryRenderedFeatures(undefined, {
+    layers: ["stolpersteine-points"],
+  });
   if (!feats.length) return { err: "no features anywhere", zoom: map.getZoom() };
   // fire a click at the feature's pixel
   const f = feats[0];

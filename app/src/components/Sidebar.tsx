@@ -45,8 +45,6 @@ export type SidebarSelection =
   | null;
 
 function normaliseFilename(filename: string): string {
-  // Strip Datei:/File: prefix (e.g. when image came from a wikitext link)
-  // and normalise spaces to underscores per Commons URL convention.
   return filename
     .replace(/^(Datei|File|Image|Bild):/i, "")
     .trim()
@@ -54,8 +52,6 @@ function normaliseFilename(filename: string): string {
 }
 
 function commonsThumb(filename: string, width = 600): string {
-  // If a full URL was provided (e.g. an OSM `image` tag pointing offsite),
-  // pass it through untouched.
   if (/^https?:\/\//i.test(filename)) return filename;
   const safe = normaliseFilename(filename);
   return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(
@@ -70,37 +66,20 @@ function commonsFilePage(filename: string): string {
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  destroyed_synagogue:
-    // Star of David, intentionally broken-line treatment via stroke-dasharray
-    "M12 2 L21 18 H3 Z M12 22 L3 6 H21 Z",
+  destroyed_synagogue: "M12 2 L21 18 H3 Z M12 22 L3 6 H21 Z",
   synagogue_memorial: "M12 2 L21 18 H3 Z M12 22 L3 6 H21 Z",
-  jewish_cemetery:
-    // Headstone outline + base
-    "M5 22 V10 a7 7 0 0114 0 V22 Z",
+  jewish_cemetery: "M5 22 V10 a7 7 0 0114 0 V22 Z",
   jewish_site: "M5 22 V10 a7 7 0 0114 0 V22 Z",
-  bunker:
-    // Squat fortress
-    "M3 20 V12 L7 8 H17 L21 12 V20 Z M9 20 V14 H15 V20",
-  stolperschwelle:
-    // Square paving stone
-    "M4 6 H20 V18 H4 Z",
-  perpetrator_site:
-    // Crossed-out square (torch suppressed; using a "no" mark for tact)
-    "M4 4 H20 V20 H4 Z M4 4 L20 20 M20 4 L4 20",
-  forced_labor:
-    // Barracks profile
-    "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
+  bunker: "M3 20 V12 L7 8 H17 L21 12 V20 Z M9 20 V14 H15 V20",
+  stolperschwelle: "M4 6 H20 V18 H4 Z",
+  perpetrator_site: "M4 4 H20 V20 H4 Z M4 4 L20 20 M20 4 L4 20",
+  forced_labor: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
   pow_camp_memorial: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
   concentration_camp: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
-  resistance_memorial:
-    // Flame
-    "M12 2 C8 6 6 9 6 13 a6 6 0 0012 0 C18 9 16 6 12 2 Z",
-  ns_victim_memorial:
-    // Wreath ring
-    "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
+  resistance_memorial: "M12 2 C8 6 6 9 6 13 a6 6 0 0012 0 C18 9 16 6 12 2 Z",
+  ns_victim_memorial: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
   ns_memorial: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
   memorial_other: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
-  // Stolperstein placeholder: a small square stone with engraving lines
   stolperstein: "M5 5 H19 V19 H5 Z M8 9 H16 M8 12 H16 M8 15 H13",
 };
 
@@ -115,28 +94,65 @@ function MediaPlaceholder({
   return (
     <div
       aria-hidden
-      className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-3"
+      className="relative flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 overflow-hidden"
       style={{
         background:
-          "linear-gradient(135deg, var(--color-sepia-light) 0%, color-mix(in srgb, var(--color-sepia-light) 60%, var(--color-paper)) 100%)",
+          "linear-gradient(135deg, var(--color-paper-soft) 0%, var(--color-sepia-light) 70%, color-mix(in srgb, var(--color-sepia) 25%, var(--color-paper-soft)) 100%)",
       }}
     >
+      {/* corner crop marks — printer's marks for the archival feel */}
+      <CornerMark className="left-3 top-3" position="tl" />
+      <CornerMark className="right-3 top-3" position="tr" />
+      <CornerMark className="bottom-3 left-3" position="bl" />
+      <CornerMark className="bottom-3 right-3" position="br" />
       <svg
         viewBox="0 0 24 24"
         className="h-16 w-16 text-sepia/70"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.2"
+        strokeWidth="1.1"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
         <path d={path} />
       </svg>
-      <div className="font-serif text-[11px] uppercase tracking-[0.18em] text-sepia/80">
+      <div className="akte-label" style={{ fontSize: "0.6rem" }}>
         {label}
       </div>
-      <div className="text-[10px] text-faded/70">Kein Foto verfügbar</div>
+      <div
+        className="text-[10px] italic text-faded/80"
+        style={{ fontFamily: "var(--font-serif)" }}
+      >
+        kein Foto verfügbar
+      </div>
     </div>
+  );
+}
+
+function CornerMark({
+  className = "",
+  position,
+}: {
+  className?: string;
+  position: "tl" | "tr" | "bl" | "br";
+}) {
+  const lines: Record<typeof position, string> = {
+    tl: "M0 0 V8 M0 0 H8",
+    tr: "M16 0 V8 M16 0 H8",
+    bl: "M0 16 V8 M0 16 H8",
+    br: "M16 16 V8 M16 16 H8",
+  };
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 16 16"
+      className={`absolute h-3 w-3 text-faded/50 ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.1"
+    >
+      <path d={lines[position]} />
+    </svg>
   );
 }
 
@@ -224,25 +240,46 @@ export function Sidebar({
     <aside
       aria-hidden={!open}
       aria-label="Detailansicht"
-      className={`pointer-events-auto fixed inset-y-0 right-0 z-20 flex w-full max-w-[420px] flex-col border-l border-sepia-light bg-paper shadow-2xl transition-transform duration-300 ease-out ${
-        open ? "translate-x-0" : "translate-x-full"
+      className={`akte-grain pointer-events-auto fixed inset-y-0 right-0 z-20 flex w-full max-w-[440px] flex-col border-l border-paper-edge bg-paper-light shadow-[-12px_0_36px_rgba(28,24,20,0.18)] transition-transform duration-[420ms] ${
+        open ? "translate-x-0 ease-out" : "translate-x-full ease-in"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-sepia-light px-5 py-3">
-        <h2 className="font-serif text-xs uppercase tracking-widest text-sepia">
-          {selection ? (THEME_LABELS[selection.theme] ?? "") : ""}
-        </h2>
+      {/* Index-tab top bar */}
+      <div className="relative flex items-center justify-between border-b border-paper-edge bg-paper-soft/60 px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="block h-3 w-3 rounded-full border-2 border-sepia"
+            style={{
+              backgroundColor: selection
+                ? "color-mix(in srgb, var(--color-sepia) 70%, transparent)"
+                : "transparent",
+            }}
+          />
+          <span
+            className="akte-label"
+            style={{ fontSize: "0.6rem", letterSpacing: "0.24em" }}
+          >
+            {selection ? (THEME_LABELS[selection.theme] ?? "Akte") : ""}
+          </span>
+        </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="rounded p-1 text-faded transition-colors hover:bg-sepia-light/40 hover:text-ink"
+          className="group flex items-center gap-1.5 rounded-none border border-transparent px-1.5 py-1 text-faded transition-colors hover:border-paper-edge hover:bg-paper hover:text-ink"
         >
+          <span
+            className="akte-label"
+            style={{ fontSize: "0.55rem", letterSpacing: "0.22em" }}
+          >
+            Esc
+          </span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
-            className="h-5 w-5"
+            className="h-4 w-4"
           >
             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
           </svg>
@@ -251,13 +288,23 @@ export function Sidebar({
 
       <div className="flex-1 overflow-y-auto">
         {loading && (
-          <div className="px-5 py-10 text-center text-sm text-faded">
-            Lade…
+          <div className="flex flex-col items-center gap-3 px-5 py-16">
+            <div
+              aria-hidden
+              className="h-px w-12 animate-pulse bg-sepia/60"
+            />
+            <div className="akte-label">Lade Akte</div>
           </div>
         )}
         {error && (
-          <div className="px-5 py-10 text-center text-sm text-red-oxide">
-            Fehler: {error}
+          <div className="px-5 py-10 text-center">
+            <div className="akte-stamp">Fehler</div>
+            <div
+              className="mt-3 text-sm italic text-faded"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {error}
+            </div>
           </div>
         )}
         {content?.kind === "stolperstein-group" && (
@@ -279,31 +326,49 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
         category="stolperstein"
         label="Stolpersteine"
       />
-      <div className="border-b border-sepia-light bg-paper px-5 py-4">
-        <h1 className="font-serif text-xl font-bold leading-tight text-ink">
+      <div className="border-b border-paper-edge bg-paper-light px-6 py-5">
+        <div className="akte-meta mb-2 flex items-center gap-3">
+          <span className="text-faded-light">Adresse</span>
+          <span className="h-px flex-1 bg-paper-edge/70" />
+          <span className="tabular-nums text-faded">
+            {g.stones.length === 1
+              ? "1 Person"
+              : `${g.stones.length} Personen`}
+          </span>
+        </div>
+        <h1
+          className="akte-display"
+          style={{ fontSize: "1.85rem", fontWeight: 500, lineHeight: 1.05 }}
+        >
           {g.address}
         </h1>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded">
-          <span>
-            {g.stones.length === 1
-              ? "1 Stolperstein"
-              : `${g.stones.length} Stolpersteine`}
-          </span>
-          {g.district && (
-            <span className="capitalize">Stadtbezirk&nbsp;{g.district}</span>
-          )}
-        </div>
+        {g.district && (
+          <div className="mt-2 akte-meta">
+            <span className="capitalize">Stadtbezirk {g.district}</span>
+          </div>
+        )}
       </div>
-      <ol className="divide-y divide-sepia-light/60">
-        {g.stones.map((s) => (
-          <li key={s.id} className="px-5 py-5">
+      <ol className="divide-y divide-paper-edge/60">
+        {g.stones.map((s, idx) => (
+          <li key={s.id} className="px-6 py-6">
+            <div className="akte-meta mb-3 flex items-center gap-2">
+              <span className="tabular-nums text-faded-light">
+                {String(idx + 1).padStart(2, "0")}
+              </span>
+              <span className="h-px flex-1 bg-paper-edge/50" />
+              {s.install_date && (
+                <span className="tabular-nums text-faded-light">
+                  verlegt {s.install_date}
+                </span>
+              )}
+            </div>
             <div className="flex gap-4">
               {s.image && (
                 <a
                   href={commonsFilePage(s.image)}
                   target="_blank"
                   rel="noreferrer"
-                  className="block h-28 w-28 shrink-0 overflow-hidden rounded bg-sepia-light/40"
+                  className="block h-28 w-28 shrink-0 overflow-hidden rounded-none border border-paper-edge bg-sepia-light/40"
                 >
                   <img
                     src={commonsThumb(s.image, 240)}
@@ -314,18 +379,16 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
                 </a>
               )}
               <div className="min-w-0 flex-1">
-                <h2 className="font-serif text-base font-bold leading-tight text-ink">
+                <h2
+                  className="akte-display"
+                  style={{ fontSize: "1.25rem", lineHeight: 1.15 }}
+                >
                   {s.name}
                 </h2>
-                {s.install_date && (
-                  <div className="mt-0.5 text-[11px] text-faded">
-                    Verlegt&nbsp;{s.install_date}
-                  </div>
-                )}
                 {s.inscription && (
                   <pre
                     aria-label="Inschrift"
-                    className="mt-2 whitespace-pre-wrap border-l-2 border-sepia bg-[#f4efe7] p-2 font-serif text-[12px] leading-snug text-ink"
+                    className="inscription mt-3 text-[0.82rem]"
                   >
                     {s.inscription}
                   </pre>
@@ -333,7 +396,7 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
               </div>
             </div>
             {s.bio && (
-              <div className="article-body mt-3 text-[14px] text-ink">
+              <div className="article-body mt-4 text-[0.92rem] leading-[1.7]">
                 {s.bio.split(/\n+/).map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}
@@ -342,8 +405,8 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
           </li>
         ))}
       </ol>
-      <div className="px-5 py-4">
-        <SourceLink href={g.source_url} />
+      <div className="px-6 py-5">
+        <SourceLink href={g.source_url} label="Wikipedia (CC BY-SA 4.0)" />
       </div>
     </article>
   );
@@ -369,7 +432,7 @@ function HeaderMedia({
       href={commonsFilePage(image)}
       target="_blank"
       rel="noreferrer"
-      className="block aspect-[4/3] w-full overflow-hidden bg-sepia-light/40"
+      className="relative block aspect-[4/3] w-full overflow-hidden bg-paper-soft"
     >
       <img
         src={commonsThumb(image, 600)}
@@ -378,6 +441,15 @@ function HeaderMedia({
         onError={() => setErrored(true)}
         className="h-full w-full object-cover"
       />
+      {/* Soft vignette to integrate with the paper chrome */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 60%, rgba(28,24,20,0.18) 100%)",
+        }}
+      />
     </a>
   );
 }
@@ -385,12 +457,14 @@ function HeaderMedia({
 function NsOrtView({ n }: { n: NsOrt }) {
   const sourceLabel =
     n.source === "osm"
-      ? "Quelle: OpenStreetMap (ODbL)"
+      ? "OpenStreetMap (ODbL)"
       : n.source === "baudenkmal"
-        ? "Quelle: Wikipedia (CC BY-SA 4.0)"
+        ? "Wikipedia (CC BY-SA 4.0)"
         : n.source === "wikipedia-narrative"
-          ? "Quelle: Wikipedia (CC BY-SA 4.0)"
-          : "Recherche";
+          ? "Wikipedia (CC BY-SA 4.0)"
+          : n.source === "wp-auto"
+            ? "Wikipedia (CC BY-SA 4.0)"
+            : "Eigene Recherche";
   const categoryLabel = NS_CATEGORY_LABELS[n.category] ?? n.category;
   return (
     <article>
@@ -400,60 +474,93 @@ function NsOrtView({ n }: { n: NsOrt }) {
         category={n.category}
         label={categoryLabel}
       />
-      <div className="px-5 py-5">
-        <div className="text-[10px] uppercase tracking-widest text-sepia">
-          {NS_CATEGORY_LABELS[n.category] ?? n.category}
+      <div className="px-6 py-6">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="akte-stamp">{categoryLabel}</span>
         </div>
-        <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-ink">
+        <h1
+          className="akte-display"
+          style={{ fontSize: "1.85rem", fontWeight: 500, lineHeight: 1.06 }}
+        >
           {n.name}
         </h1>
         {n.address && (
-          <div className="mt-1 text-sm text-faded">{n.address}</div>
+          <div
+            className="mt-1.5 italic text-faded"
+            style={{ fontFamily: "var(--font-serif)", fontSize: "1rem" }}
+          >
+            {n.address}
+          </div>
         )}
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded">
-          {n.ortsteil && <span>{n.ortsteil}</span>}
-          {n.build_date && <span>Bauzeit:&nbsp;{n.build_date}</span>}
-          {n.denkmal_nummer && (
-            <span>Denkmal-Nr.&nbsp;{n.denkmal_nummer}</span>
+        <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-y border-paper-edge/60 py-3">
+          {n.ortsteil && (
+            <MetaCell label="Ortsteil" value={n.ortsteil} />
           )}
+          {n.build_date && (
+            <MetaCell label="Bauzeit" value={n.build_date} />
+          )}
+          {n.denkmal_nummer && (
+            <MetaCell label="Denkmal-Nr." value={n.denkmal_nummer} />
+          )}
+          <MetaCell
+            label="Koordinaten"
+            value={`${n.lat.toFixed(4)}, ${n.lng.toFixed(4)}`}
+          />
         </div>
         {n.description && (
-          <div className="article-body mt-5 text-[15px] text-ink">
+          <div className="article-body with-dropcap mt-6">
             {n.description.split(/\n+/).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
         )}
-        <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded">
-          {n.source_url ? (
-            <a
-              href={n.source_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sepia underline hover:text-ink"
-            >
-              {sourceLabel}
-            </a>
-          ) : (
-            <span>{sourceLabel}</span>
-          )}
+        <div className="mt-7">
+          <SourceLink href={n.source_url} label={sourceLabel} />
         </div>
       </div>
     </article>
   );
 }
 
-function SourceLink({ href }: { href: string }) {
+function MetaCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded">
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="text-sepia underline hover:text-ink"
+    <div className="flex flex-col">
+      <span className="akte-label" style={{ fontSize: "0.55rem" }}>
+        {label}
+      </span>
+      <span
+        className="text-[0.85rem] tabular-nums text-ink-soft"
+        style={{ fontFamily: "var(--font-serif)" }}
       >
-        Quelle: Wikipedia (CC&nbsp;BY-SA&nbsp;4.0)
-      </a>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function SourceLink({
+  href,
+  label,
+}: {
+  href: string | undefined;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-t border-paper-edge/60 pt-4">
+      <span className="akte-label">Quelle</span>
+      <span className="h-px flex-1 bg-paper-edge/40" />
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="akte-meta text-sepia underline decoration-sepia/40 underline-offset-2 transition-colors hover:text-ink hover:decoration-ink"
+        >
+          {label}
+        </a>
+      ) : (
+        <span className="akte-meta">{label}</span>
+      )}
     </div>
   );
 }

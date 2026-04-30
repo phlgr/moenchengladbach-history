@@ -1,25 +1,75 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapView } from "../components/MapView";
+import { LayerToggle } from "../components/LayerToggle";
+import { LayerStateContext } from "../lib/layerState";
+import { THEMES, type ThemeId } from "../lib/themes";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+const ALL_THEMES = Object.keys(THEMES) as ThemeId[];
+
 function HomePage() {
+  const [active, setActive] = useState<Record<ThemeId, boolean>>(() => {
+    const a = {} as Record<ThemeId, boolean>;
+    for (const t of ALL_THEMES) a[t] = true;
+    return a;
+  });
+  const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
+
+  const toggle = useCallback(
+    (id: ThemeId) => setActive((a) => ({ ...a, [id]: !a[id] })),
+    [],
+  );
+  const toggleGroup = useCallback((group: string, allOn: boolean) => {
+    setActive((a) => {
+      const next = { ...a };
+      for (const t of ALL_THEMES) {
+        if (THEMES[t].group === group) next[t] = allOn;
+      }
+      return next;
+    });
+  }, []);
+  const setCount = useCallback(
+    (id: ThemeId, n: number) => setCounts((c) => ({ ...c, [id]: n })),
+    [],
+  );
+
   return (
-    <main className="relative h-screen w-screen overflow-hidden">
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-4">
-        <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 px-4 py-2 shadow">
-          <h1 className="font-serif text-lg font-bold text-ink">
-            Mönchengladbach History
-          </h1>
-          <p className="text-xs text-faded">
-            Stolpersteine — eine offene, interaktive Karte
-          </p>
-        </div>
-      </header>
-      <MapView />
-    </main>
+    <LayerStateContext.Provider
+      value={{ active, counts, toggle, toggleGroup, setCount }}
+    >
+      <main className="relative h-screen w-screen overflow-hidden">
+        <header className="pointer-events-none absolute left-0 top-0 z-10 flex w-fit max-w-[280px] flex-col gap-2 p-5">
+          <div className="akte-grain akte-reveal pointer-events-auto relative flex flex-col gap-2 border border-paper-edge bg-paper-light/95 px-5 pb-3 pt-3 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
+            {/* Folder-tab corner accent */}
+            <div
+              aria-hidden
+              className="absolute -right-px -top-px h-3 w-10 origin-top-right border-l border-paper-edge bg-paper-soft"
+            />
+            <div
+              className="akte-label flex items-center gap-2"
+              style={{ fontSize: "0.55rem" }}
+            >
+              <span>Akte</span>
+              <span className="h-px w-4 bg-paper-edge" />
+              <span>NRW · MG</span>
+            </div>
+            <h1 className="akte-display text-[1.65rem] tracking-tight">
+              Mönchengladbach
+              <span className="block text-[0.95rem] italic text-faded">
+                Eine Geschichtskarte
+              </span>
+            </h1>
+            <div className="akte-meta pt-0.5 text-[0.62rem]">1933 — 1945</div>
+          </div>
+          <LayerToggle />
+        </header>
+        <MapView />
+      </main>
+    </LayerStateContext.Provider>
   );
 }

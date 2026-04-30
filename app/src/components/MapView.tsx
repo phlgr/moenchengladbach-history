@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import { Sidebar, type SidebarSelection } from "./Sidebar";
-import { LayerToggle } from "./LayerToggle";
 import { createMapStyle } from "../lib/mapStyle";
 import { THEMES, type ThemeId } from "../lib/themes";
+import { useLayerState } from "../lib/layerState";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
 
@@ -18,7 +18,6 @@ const ORDERED_THEMES: ThemeId[] = [
   "ns-gedenkorte",
 ];
 
-/** All NS sub-themes share one content directory. */
 function contentDirFor(theme: ThemeId): string {
   return theme === "stolpersteine" ? "stolpersteine" : "ns-orte";
 }
@@ -26,12 +25,7 @@ function contentDirFor(theme: ThemeId): string {
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MlMap | null>(null);
-  const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
-  const [active, setActive] = useState<Record<ThemeId, boolean>>(() => {
-    const a = {} as Record<ThemeId, boolean>;
-    for (const t of ORDERED_THEMES) a[t] = true;
-    return a;
-  });
+  const { active, setCount } = useLayerState();
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);
 
@@ -105,7 +99,7 @@ export function MapView() {
             if (!res.ok) return;
             const fc = await res.json();
             if (cancelled) return;
-            setCounts((prev) => ({ ...prev, [theme]: fc.features.length }));
+            setCount(theme, fc.features.length);
             addThemeLayers(map, theme, fc);
           }),
         );
@@ -278,22 +272,6 @@ export function MapView() {
     <>
       <div className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
-        <div className="pointer-events-none absolute left-4 top-20 z-10 flex w-52 flex-col gap-2">
-          <LayerToggle
-            active={active}
-            counts={counts}
-            onToggle={(id) => setActive((a) => ({ ...a, [id]: !a[id] }))}
-            onToggleGroup={(group, allOn) =>
-              setActive((a) => {
-                const next = { ...a };
-                for (const t of ORDERED_THEMES) {
-                  if (THEMES[t].group === group) next[t] = allOn;
-                }
-                return next;
-              })
-            }
-          />
-        </div>
       </div>
       <Sidebar
         selection={selection}
