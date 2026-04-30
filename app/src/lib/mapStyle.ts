@@ -1,366 +1,132 @@
 import type { StyleSpecification } from "maplibre-gl";
-
-const ARCHIVAL = {
-  paper: "#efe6cf",
-  paperLight: "#faf8f5",
-  earth: "#ede4cf",
-  park: "#d6cda8",
-  forest: "#bdb38c",
-  water: "#a8b8b6",
-  road: "#fbf4dd",
-  roadCasingMinor: "#a89878",
-  roadCasingMajor: "#7a6a4a",
-  roadCasingHighway: "#5e4f30",
-  building: "#d8cbac",
-  buildingOutline: "#9a8a68",
-  ink: "#3a3530",
-  fadedInk: "#5e564a",
-  sepia: "#7a5e3a",
-};
+import { layersWithPartialCustomTheme } from "protomaps-themes-base";
 
 /**
- * Lean archival style: small set of vector layers from OpenFreeMap's planet
- * tileset, recoloured with the warm-paper palette used by frankfurt-history.
- * Free public vector tiles, no API key, no `pmtiles` binary required for
- * the prototype. Swap in a self-hosted PMTiles file later for offline / pin
- * basemap archival assets in the repo.
+ * Public Protomaps planet PMTiles. Served as a single 135 GB file behind
+ * an HTTP range-request CDN — the `pmtiles` library fetches only the
+ * directory + the bytes for the tiles currently in view, so total network
+ * use stays modest.
+ *
+ * Swap to a self-hosted regional extract for production:
+ *   pmtiles extract https://demo-bucket.protomaps.com/v4.pmtiles \
+ *     app/public/moenchengladbach.pmtiles \
+ *     --bbox=6.3,51.1,6.6,51.3 --maxzoom=15
+ * then change PMTILES_URL to "/moenchengladbach.pmtiles".
  */
+const PMTILES_URL = "https://demo-bucket.protomaps.com/v4.pmtiles";
+
+const archivalTheme = {
+  background: "#FAF8F5",
+  earth: "#F0EBE4",
+  park_a: "#E6DFCF",
+  park_b: "#E0D9C8",
+  hospital: "#EDE7DB",
+  industrial: "#EDE9E0",
+  school: "#EDE7DB",
+  wood_a: "#DDD7C5",
+  wood_b: "#D8D1BF",
+  pedestrian: "#F0EBE4",
+  scrub_a: "#E2DBC9",
+  scrub_b: "#DDD5C3",
+  glacier: "#E8E4DC",
+  sand: "#E8E0CC",
+  beach: "#E8E0CC",
+  aerodrome: "#EDE9E0",
+  runway: "#D4CFC4",
+  water: "#C4CECE",
+  zoo: "#E6DFCF",
+  military: "#E0D9C8",
+
+  tunnel_other_casing: "#D4C5AD",
+  tunnel_minor_casing: "#D4C5AD",
+  tunnel_link_casing: "#D4C5AD",
+  tunnel_major_casing: "#C8B99A",
+  tunnel_highway_casing: "#C8B99A",
+  tunnel_other: "#F0EBE4",
+  tunnel_minor: "#F0EBE4",
+  tunnel_link: "#EDE7DB",
+  tunnel_major: "#EDE7DB",
+  tunnel_highway: "#E8DFD0",
+
+  pier: "#E8E1D4",
+  buildings: "#E0D9CC",
+
+  minor_service_casing: "#D4C5AD",
+  minor_casing: "#D4C5AD",
+  link_casing: "#C8B99A",
+  major_casing_late: "#C8B99A",
+  highway_casing_late: "#B8A98A",
+  other: "#F5F0E8",
+  minor_service: "#F5F0E8",
+  minor_a: "#F5F0E8",
+  minor_b: "#F0EBE4",
+  link: "#EDE7DB",
+  major_casing_early: "#C8B99A",
+  major: "#EDE7DB",
+  highway_casing_early: "#B8A98A",
+  highway: "#E8DFD0",
+  railway: "#C8B99A",
+  boundaries: "#B8A98A",
+
+  waterway_label: "#8B9B9B",
+
+  bridges_other_casing: "#D4C5AD",
+  bridges_minor_casing: "#D4C5AD",
+  bridges_link_casing: "#C8B99A",
+  bridges_major_casing: "#C8B99A",
+  bridges_highway_casing: "#B8A98A",
+  bridges_other: "#F5F0E8",
+  bridges_minor: "#F5F0E8",
+  bridges_link: "#EDE7DB",
+  bridges_major: "#EDE7DB",
+  bridges_highway: "#E8DFD0",
+
+  roads_label_minor: "#8B7355",
+  roads_label_minor_halo: "#FAF8F5",
+  roads_label_major: "#6B6560",
+  roads_label_major_halo: "#FAF8F5",
+  ocean_label: "#8B9B9B",
+  peak_label: "#8B7355",
+  subplace_label: "#8B7355",
+  subplace_label_halo: "#FAF8F5",
+  city_label: "#6B6560",
+  city_label_halo: "#FAF8F5",
+  state_label: "#8B7355",
+  state_label_halo: "#FAF8F5",
+  country_label: "#6B6560",
+  address_label: "#A09080",
+  address_label_halo: "#FAF8F5",
+  landcover: {
+    grassland: "#E4DDD0",
+    barren: "#E8E0CC",
+    urban_area: "#EDE9E0",
+    farmland: "#E2DBC9",
+    glacier: "#E8E4DC",
+    scrub: "#DDD5C3",
+    forest: "#D8D1BF",
+  },
+};
+
 export function createMapStyle(): StyleSpecification {
   return {
     version: 8,
-    glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+    sprite: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
+    glyphs:
+      "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
     sources: {
-      ofm: {
+      protomaps: {
         type: "vector",
-        url: "https://tiles.openfreemap.org/planet",
+        url: `pmtiles://${PMTILES_URL}`,
         attribution:
-          'Karte © <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> · Daten © <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap-Mitwirkende</a>',
+          'Karte © <a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a> · Daten © <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
       },
     },
-    layers: [
-      {
-        id: "background",
-        type: "background",
-        paint: { "background-color": ARCHIVAL.paper },
-      },
-      {
-        id: "landuse-residential",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "landuse",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["residential", "neighbourhood", "suburb"]],
-        ],
-        paint: { "fill-color": ARCHIVAL.paper, "fill-opacity": 0.6 },
-      },
-      {
-        id: "landuse-park",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "landuse",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["park", "garden", "playground", "cemetery", "grass"]],
-        ],
-        paint: { "fill-color": ARCHIVAL.park, "fill-opacity": 0.7 },
-      },
-      {
-        id: "park",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "park",
-        paint: { "fill-color": ARCHIVAL.park },
-      },
-      {
-        id: "landcover-wood",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "landcover",
-        filter: ["==", ["get", "class"], "wood"],
-        paint: { "fill-color": ARCHIVAL.forest, "fill-opacity": 0.9 },
-      },
-      {
-        id: "water",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "water",
-        paint: { "fill-color": ARCHIVAL.water },
-      },
-      {
-        id: "waterway",
-        type: "line",
-        source: "ofm",
-        "source-layer": "waterway",
-        paint: {
-          "line-color": ARCHIVAL.water,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 16, 3],
-        },
-      },
-      {
-        id: "buildings",
-        type: "fill",
-        source: "ofm",
-        "source-layer": "building",
-        minzoom: 13,
-        paint: {
-          "fill-color": ARCHIVAL.building,
-          "fill-outline-color": ARCHIVAL.buildingOutline,
-          "fill-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            13,
-            0,
-            14,
-            0.9,
-          ],
-        },
-      },
-
-      // Minor / service roads — visible from mid zoom outwards
-      {
-        id: "road-minor-casing",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        minzoom: 12,
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["minor", "service", "track"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.roadCasingMinor,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            12,
-            0.6,
-            14,
-            1.6,
-            18,
-            5,
-          ],
-        },
-      },
-      {
-        id: "road-minor",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        minzoom: 13,
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["minor", "service", "track"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.road,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            13,
-            0.4,
-            16,
-            2.4,
-            18,
-            4,
-          ],
-        },
-      },
-
-      // Tertiary / secondary
-      {
-        id: "road-major-casing",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["secondary", "tertiary"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.roadCasingMajor,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            8,
-            0.6,
-            12,
-            2.4,
-            16,
-            10,
-          ],
-        },
-      },
-      {
-        id: "road-major",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["secondary", "tertiary"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.road,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            8,
-            0.3,
-            12,
-            1.6,
-            16,
-            8,
-          ],
-        },
-      },
-
-      // Primary / motorway / trunk
-      {
-        id: "road-highway-casing",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["motorway", "trunk", "primary"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.roadCasingHighway,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            6,
-            0.6,
-            10,
-            2.4,
-            14,
-            7,
-            18,
-            16,
-          ],
-        },
-      },
-      {
-        id: "road-highway",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["motorway", "trunk", "primary"]],
-        ],
-        paint: {
-          "line-color": ARCHIVAL.road,
-          "line-width": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            6,
-            0.4,
-            10,
-            1.6,
-            14,
-            5,
-            18,
-            13,
-          ],
-        },
-      },
-
-      {
-        id: "rail",
-        type: "line",
-        source: "ofm",
-        "source-layer": "transportation",
-        filter: ["==", ["get", "class"], "rail"],
-        paint: {
-          "line-color": ARCHIVAL.roadCasingMajor,
-          "line-width": 0.8,
-          "line-dasharray": [2, 2],
-        },
-      },
-      {
-        id: "place-city",
-        type: "symbol",
-        source: "ofm",
-        "source-layer": "place",
-        filter: ["in", ["get", "class"], ["literal", ["city", "town"]]],
-        layout: {
-          "text-field": ["coalesce", ["get", "name:de"], ["get", "name"]],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            8,
-            12,
-            14,
-            16,
-          ],
-          "text-letter-spacing": 0.05,
-        },
-        paint: {
-          "text-color": ARCHIVAL.fadedInk,
-          "text-halo-color": ARCHIVAL.paperLight,
-          "text-halo-width": 1.5,
-        },
-      },
-      {
-        id: "place-suburb",
-        type: "symbol",
-        source: "ofm",
-        "source-layer": "place",
-        minzoom: 11,
-        filter: [
-          "in",
-          ["get", "class"],
-          ["literal", ["suburb", "neighbourhood", "village", "hamlet"]],
-        ],
-        layout: {
-          "text-field": ["coalesce", ["get", "name:de"], ["get", "name"]],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 11,
-          "text-letter-spacing": 0.05,
-        },
-        paint: {
-          "text-color": ARCHIVAL.sepia,
-          "text-halo-color": ARCHIVAL.paperLight,
-          "text-halo-width": 1.2,
-        },
-      },
-      {
-        id: "road-label",
-        type: "symbol",
-        source: "ofm",
-        "source-layer": "transportation_name",
-        minzoom: 14,
-        layout: {
-          "text-field": ["coalesce", ["get", "name:de"], ["get", "name"]],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": 10,
-          "symbol-placement": "line",
-        },
-        paint: {
-          "text-color": ARCHIVAL.fadedInk,
-          "text-halo-color": ARCHIVAL.paperLight,
-          "text-halo-width": 1,
-        },
-      },
-    ],
+    layers: layersWithPartialCustomTheme(
+      "protomaps",
+      "light",
+      archivalTheme,
+      "de",
+      "Latin",
+    ) as StyleSpecification["layers"],
   };
 }

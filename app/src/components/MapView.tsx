@@ -49,8 +49,16 @@ export function MapView() {
     let mapInstance: MlMap | null = null;
 
     (async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
+      const [maplibregl, { Protocol }] = await Promise.all([
+        import("maplibre-gl").then((m) => m.default),
+        import("pmtiles"),
+      ]);
       if (cancelled || !containerRef.current) return;
+
+      // Register the pmtiles:// protocol so MapLibre can read range-requested
+      // PMTiles directly from a CDN without a tile server.
+      const proto = new Protocol();
+      maplibregl.addProtocol("pmtiles", proto.tile);
 
       const map = new maplibregl.Map({
         container: containerRef.current,
