@@ -19,12 +19,11 @@ await page.waitForTimeout(2500);
 const result = await page.evaluate(async () => {
   const map = (window as any).__map;
   if (!map) return { err: "no map" };
-  // jump to a known stone area
-  map.jumpTo({ center: [6.4312, 51.1962], zoom: 16 });
+  // jump to where NS-Orte cluster
+  map.jumpTo({ center: [6.4429, 51.1639], zoom: 14 });
   await new Promise((r) => setTimeout(r, 1500));
-  // query the entire viewport for points
   const feats = map.queryRenderedFeatures(undefined, {
-    layers: ["stolpersteine-points"],
+    layers: ["ns-orte-points"],
   });
   if (!feats.length) return { err: "no features anywhere", zoom: map.getZoom() };
   // fire a click at the feature's pixel

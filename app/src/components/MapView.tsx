@@ -7,7 +7,7 @@ import { THEMES, type ThemeId } from "../lib/themes";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
 
-const ORDERED_THEMES: ThemeId[] = ["stolpersteine", "baudenkmaeler"];
+const ORDERED_THEMES: ThemeId[] = ["stolpersteine", "ns-orte"];
 
 export function MapView() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -15,7 +15,7 @@ export function MapView() {
   const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
   const [active, setActive] = useState<Record<ThemeId, boolean>>({
     stolpersteine: true,
-    baudenkmaeler: true,
+    "ns-orte": true,
   });
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Build per-theme GeoJSON files and per-POI content JSON from data/raw/.
+"""Build per-theme GeoJSON files and per-POI content JSON.
 
-Stolpersteine are grouped by address — many stones share an address
-(a family memorial). Each group becomes one map feature; the sidebar
-content lists all stones at that location.
+Layers:
+- stolpersteine — grouped by address, each feature is one address
+- ns-orte       — combined from:
+                    1. OSM historic NS-related (osm_ns.py)
+                    2. Baudenkmäler filtered by NS keyword
+                    3. Curated overrides in overrides/ns_orte/curated.json
 
 Outputs:
-  app/public/data/stolpersteine.geojson    — Point per address
-  app/public/data/baudenkmaeler.geojson    — Point per Denkmal
-  app/public/data/content/stolpersteine/<location_id>.json
-  app/public/data/content/baudenkmaeler/<id>.json
+  app/public/data/stolpersteine.geojson
+  app/public/data/ns-orte.geojson
+  app/public/data/content/<theme>/<id>.json
 """
 from __future__ import annotations
 
@@ -20,8 +22,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
+OVERRIDES = ROOT / "overrides"
 OUT_DATA = ROOT / "app" / "public" / "data"
 OUT_CONTENT = OUT_DATA / "content"
+
+NS_KEYWORDS = re.compile(
+    r"(bunker|luftschutz|hochbunk|synagog|mahnm|gedenk|kriegerdenkm|"
+    r"opfer|1933|1945|reichspogrom|stolperschw|zwangsarbeit|"
+    r"jüdisch|judisch|deportier|nationalsoz|widerstand|gefallen|"
+    r"krieg)",
+    re.I,
+)
 
 
 def slugify(s: str) -> str:
@@ -32,6 +43,8 @@ def slugify(s: str) -> str:
     return s.strip("-") or "x"
 
 
+# ---------------------------------------------------------------- Stolpersteine
+
 def build_stolpersteine() -> tuple[int, int]:
     src_path = RAW / "stolpersteine_wp.json"
     if not src_path.exists():
@@ -40,7 +53,6 @@ def build_stolpersteine() -> tuple[int, int]:
     out_dir = OUT_CONTENT / "stolpersteine"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # group by (lat6, lng6) — locations with same coordinates collapse
     groups: dict[tuple[float, float], list[dict]] = defaultdict(list)
     for e in src:
         if e.get("lat") is None or e.get("lng") is None:
@@ -48,7 +60,6 @@ def build_stolpersteine() -> tuple[int, int]:
         key = (round(e["lat"], 6), round(e["lng"], 6))
         groups[key].append(e)
 
-    # generate stable location ids: <district>-<address-slug>
     location_ids: dict[tuple[float, float], str] = {}
     used: set[str] = set()
     for key, stones in groups.items():
@@ -80,10 +91,9 @@ def build_stolpersteine() -> tuple[int, int]:
                 "address": first.get("address"),
                 "district": first.get("district"),
                 "count": len(stones),
-                "names": names[:6],  # for tooltip; truncate
+                "names": names[:6],
             },
         })
-        # content file: address + list of stones
         (out_dir / f"{loc_id}.json").write_text(
             json.dumps(
                 {
@@ -120,52 +130,127 @@ def build_stolpersteine() -> tuple[int, int]:
     return len(features), total_stones
 
 
-def build_baudenkmaeler() -> int:
+# ---------------------------------------------------------------- NS-Orte
+
+def collect_ns_baudenkmaeler() -> list[dict]:
+    """Filter Baudenkmäler to NS-related entries by keyword."""
     src_path = RAW / "baudenkmaeler_wp.json"
     if not src_path.exists():
-        return 0
-    src = json.loads(src_path.read_text())
-    out_dir = OUT_CONTENT / "baudenkmaeler"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    features = []
-    for e in src:
+        return []
+    out: list[dict] = []
+    for e in json.loads(src_path.read_text()):
         if e.get("lat") is None or e.get("lng") is None:
             continue
+        text = " ".join([
+            e.get("name", ""),
+            e.get("bezeichnung", ""),
+            e.get("description", ""),
+            e.get("address", ""),
+        ])
+        if not NS_KEYWORDS.search(text):
+            continue
+        bez = e.get("bezeichnung", "").lower()
+        if "luftschutz" in bez or "bunker" in bez:
+            cat = "bunker"
+        elif "jüdisch" in bez or "synagog" in bez:
+            cat = "jewish_cemetery" if "friedhof" in bez else "jewish_site"
+        elif "krieg" in bez or "gefallen" in bez:
+            cat = "war_memorial"
+        else:
+            cat = "memorial_other"
+        out.append({
+            "id": f"bd-{e['id']}",
+            "name": e.get("bezeichnung") or e.get("name") or e.get("address", ""),
+            "category": cat,
+            "lat": e["lat"],
+            "lng": e["lng"],
+            "address": e.get("address", ""),
+            "ortsteil": e.get("ortsteil", ""),
+            "description": e.get("description", ""),
+            "build_date": e.get("build_date", ""),
+            "image": e.get("image") or "",
+            "source": "baudenkmal",
+            "source_url": e.get("source_url", ""),
+            "denkmal_nummer": e.get("nummer", ""),
+        })
+    return out
+
+
+def collect_ns_osm() -> list[dict]:
+    src_path = RAW / "ns_orte_osm.json"
+    if not src_path.exists():
+        return []
+    return json.loads(src_path.read_text())
+
+
+def collect_ns_curated() -> list[dict]:
+    src_path = OVERRIDES / "ns_orte" / "curated.json"
+    if not src_path.exists():
+        return []
+    data = json.loads(src_path.read_text())
+    return data.get("entries", [])
+
+
+def build_ns_orte() -> int:
+    out_dir = OUT_CONTENT / "ns-orte"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    all_entries: list[dict] = []
+    all_entries.extend(collect_ns_curated())
+    all_entries.extend(collect_ns_baudenkmaeler())
+    all_entries.extend(collect_ns_osm())
+
+    # de-dupe by spatial proximity within 25 m AND same category, keeping
+    # curated > baudenkmal > osm priority. (Curated comes first in the list.)
+    keep: list[dict] = []
+    for e in all_entries:
+        e_lat, e_lng = e.get("lat"), e.get("lng")
+        if e_lat is None or e_lng is None:
+            continue
+        if any(
+            abs(e_lat - k["lat"]) < 0.0003
+            and abs(e_lng - k["lng"]) < 0.0005
+            and e.get("category") == k.get("category")
+            for k in keep
+        ):
+            continue
+        keep.append(e)
+
+    seen_ids: set[str] = set()
+    features: list[dict] = []
+    for e in keep:
+        eid = e.get("id") or ""
+        while eid in seen_ids or not eid:
+            eid = f"{eid}-x" if eid else f"ns-{len(seen_ids)}"
+        seen_ids.add(eid)
+        e["id"] = eid
+
         features.append({
             "type": "Feature",
-            "id": e["id"],
+            "id": eid,
             "geometry": {"type": "Point", "coordinates": [e["lng"], e["lat"]]},
             "properties": {
-                "id": e["id"],
-                "name": e["name"],
-                "bezeichnung": e.get("bezeichnung", ""),
+                "id": eid,
+                "name": e.get("name", ""),
+                "category": e.get("category", "other"),
                 "address": e.get("address", ""),
-                "ortsteil": e.get("ortsteil", ""),
-                "image": e.get("image"),
             },
         })
-        (out_dir / f"{e['id']}.json").write_text(
-            json.dumps(
-                {"kind": "baudenkmal", **e},
-                ensure_ascii=False,
-                indent=2,
-            )
+        (out_dir / f"{eid}.json").write_text(
+            json.dumps({"kind": "ns-orte", **e}, ensure_ascii=False, indent=2)
         )
 
     fc = {"type": "FeatureCollection", "features": features}
     OUT_DATA.mkdir(parents=True, exist_ok=True)
-    (OUT_DATA / "baudenkmaeler.geojson").write_text(
-        json.dumps(fc, ensure_ascii=False)
-    )
+    (OUT_DATA / "ns-orte.geojson").write_text(json.dumps(fc, ensure_ascii=False))
     return len(features)
 
 
 def main() -> None:
     n_loc, n_stones = build_stolpersteine()
-    n_bd = build_baudenkmaeler()
+    n_ns = build_ns_orte()
     print(f"stolpersteine: {n_loc} locations covering {n_stones} stones")
-    print(f"baudenkmaeler: {n_bd} features")
+    print(f"ns-orte:       {n_ns} features")
 
 
 if __name__ == "__main__":

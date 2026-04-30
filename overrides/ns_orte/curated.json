@@ -1,0 +1,65 @@
+{
+  "_doc": "Hand-curated NS-era entries that aren't (yet) in OSM or the Baudenkmäler list. Sources cited per entry. Coordinates are approximate where the original building no longer exists.",
+  "entries": [
+    {
+      "id": "ns-synagoge-alt-mg",
+      "name": "Synagoge Mönchengladbach",
+      "category": "destroyed_synagogue",
+      "lat": 51.1948,
+      "lng": 6.4371,
+      "address": "Blücherstraße / ehem. Karlstraße",
+      "description": "1882/83 errichtete Synagoge der jüdischen Gemeinde Alt-Mönchengladbach. In der Reichspogromnacht vom 9./10. November 1938 niedergebrannt und anschließend abgerissen. Heute erinnert die Hilde-Sherman-Zander-Straße — benannt nach einer aus Mönchengladbach deportierten Holocaust-Überlebenden — an den Standort.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_im_Deutschen_Reich_von_1933_bis_1945_zerst%C3%B6rten_Synagogen"
+    },
+    {
+      "id": "ns-synagoge-rheydt",
+      "name": "Synagoge Rheydt",
+      "category": "destroyed_synagogue",
+      "lat": 51.17040,
+      "lng": 6.44186,
+      "address": "Wilhelm-Strauß-Straße / heute Werner-Gilles-Straße",
+      "description": "Synagoge der jüdischen Gemeinde Rheydt. In der Reichspogromnacht 1938 von SA und Anhängern zerstört. Ein Gedenkstein an der heutigen Werner-Gilles-Straße erinnert an den Standort.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_im_Deutschen_Reich_von_1933_bis_1945_zerst%C3%B6rten_Synagogen"
+    },
+    {
+      "id": "ns-synagoge-odenkirchen",
+      "name": "Synagoge Odenkirchen",
+      "category": "destroyed_synagogue",
+      "lat": 51.1336,
+      "lng": 6.4484,
+      "address": "Burgstraße, Odenkirchen",
+      "description": "Synagoge der jüdischen Gemeinde Odenkirchen. In der Reichspogromnacht 1938 niedergebrannt. Heute steht an der Stelle ein Wohnhaus; die jüdische Gemeinde Odenkirchen war seit 1349 dokumentiert.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_im_Deutschen_Reich_von_1933_bis_1945_zerst%C3%B6rten_Synagogen"
+    },
+    {
+      "id": "ns-synagoge-wickrathberg",
+      "name": "Synagoge Wickrathberg",
+      "category": "destroyed_synagogue",
+      "lat": 51.1582,
+      "lng": 6.3968,
+      "address": "Wickrathberg",
+      "description": "Kleine ländliche Synagoge der jüdischen Gemeinde Wickrathberg. 1938 zerstört. Mit den Synagogen in Alt-Mönchengladbach, Rheydt und Odenkirchen eine von vier in der heutigen Stadt vernichteten jüdischen Bethäusern.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_im_Deutschen_Reich_von_1933_bis_1945_zerst%C3%B6rten_Synagogen"
+    },
+    {
+      "id": "ns-goebbels-geburtshaus",
+      "name": "Geburtshaus Joseph Goebbels",
+      "category": "perpetrator_site",
+      "lat": 51.1639,
+      "lng": 6.4429,
+      "address": "Odenkirchener Straße 202, Rheydt",
+      "description": "Geburtshaus des späteren NS-Reichspropagandaministers Joseph Goebbels (* 29. Oktober 1897 in Rheydt). Das Haus existiert nicht mehr in seiner ursprünglichen Form; eine offizielle Gedenkplakette ist nicht angebracht.",
+      "source_url": "https://de.wikipedia.org/wiki/Joseph_Goebbels"
+    },
+    {
+      "id": "ns-zwangsarbeiter-preyerstrasse",
+      "name": "Zwangsarbeitergräber Preyerstraße",
+      "category": "forced_labor",
+      "lat": 51.1880,
+      "lng": 6.4570,
+      "address": "Preyerstraße, Mönchengladbach",
+      "description": "Auf dem Friedhof Preyerstraße sind 90 ausländische Zwangsarbeiter:innen aus der NS-Zeit beerdigt. 2019 wurde durch Schüler des Hugo-Junkers-Gymnasiums eine Informationstafel zur Erinnerung enthüllt.",
+      "source_url": "https://www.aktive-buergerschaft.de/moenchengladbach-schueler-erinnern-an-zwangsarbeiter-in-der-ns-zeit/"
+    }
+  ]
+}

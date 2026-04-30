@@ -21,19 +21,23 @@ type StolpersteinGroup = {
   stones: Stone[];
 };
 
-type BaudenkmalContent = {
-  kind: "baudenkmal";
+type NsOrt = {
+  kind: "ns-orte";
   id: string;
-  nummer: string;
   name: string;
-  bezeichnung: string;
-  ortsteil: string;
-  address: string;
-  build_date: string;
-  registration_date: string;
-  description: string;
-  image: string | null;
-  source_url: string;
+  category: string;
+  lat: number;
+  lng: number;
+  address?: string;
+  ortsteil?: string;
+  description?: string;
+  build_date?: string;
+  image?: string | null;
+  wikipedia?: string;
+  wikidata?: string;
+  source: "osm" | "baudenkmal" | "curated" | string;
+  source_url?: string;
+  denkmal_nummer?: string;
 };
 
 export type SidebarSelection =
@@ -54,7 +58,22 @@ function commonsFilePage(filename: string): string {
 
 const THEME_LABELS: Record<ThemeId, string> = {
   stolpersteine: "Stolpersteine",
-  baudenkmaeler: "Baudenkmal",
+  "ns-orte": "NS-Ort",
+};
+
+const NS_CATEGORY_LABELS: Record<string, string> = {
+  destroyed_synagogue: "Zerstörte Synagoge",
+  synagogue_memorial: "Gedenkort Synagoge",
+  jewish_cemetery: "Jüdischer Friedhof",
+  jewish_site: "Jüdischer Ort",
+  bunker: "Luftschutzbunker",
+  war_memorial: "Kriegerdenkmal",
+  pow_camp_memorial: "Kriegsgefangenenlager",
+  forced_labor: "Zwangsarbeit",
+  perpetrator_site: "Tätergeschichte",
+  stolperschwelle: "Stolperschwelle",
+  memorial_other: "Gedenkort",
+  other: "Sonstiges",
 };
 
 export function Sidebar({
@@ -65,7 +84,7 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const [content, setContent] = useState<
-    StolpersteinGroup | BaudenkmalContent | null
+    StolpersteinGroup | NsOrt | null
   >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,9 +171,7 @@ export function Sidebar({
         {content?.kind === "stolperstein-group" && (
           <StolpersteinGroupView g={content} />
         )}
-        {content?.kind === "baudenkmal" && (
-          <BaudenkmalView c={content} />
-        )}
+        {content?.kind === "ns-orte" && <NsOrtView n={content} />}
       </div>
     </aside>
   );
@@ -233,49 +250,72 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
   );
 }
 
-function BaudenkmalView({ c }: { c: BaudenkmalContent }) {
+function NsOrtView({ n }: { n: NsOrt }) {
+  const sourceLabel =
+    n.source === "osm"
+      ? "Quelle: OpenStreetMap (ODbL)"
+      : n.source === "baudenkmal"
+        ? "Quelle: Wikipedia (CC BY-SA 4.0)"
+        : "Recherche";
   return (
     <article>
-      {c.image && (
+      {n.image && (
         <a
-          href={commonsFilePage(c.image)}
+          href={n.image.startsWith("http") ? n.image : commonsFilePage(n.image)}
           target="_blank"
           rel="noreferrer"
           className="block aspect-[4/3] w-full overflow-hidden bg-sepia-light/40"
         >
           <img
-            src={commonsThumb(c.image, 600)}
-            alt={c.name}
+            src={
+              n.image.startsWith("http")
+                ? n.image
+                : commonsThumb(n.image, 600)
+            }
+            alt={n.name}
             loading="lazy"
             className="h-full w-full object-cover"
           />
         </a>
       )}
       <div className="px-5 py-5">
-        <h1 className="font-serif text-xl font-bold leading-tight text-ink">
-          {c.bezeichnung || c.name}
+        <div className="text-[10px] uppercase tracking-widest text-sepia">
+          {NS_CATEGORY_LABELS[n.category] ?? n.category}
+        </div>
+        <h1 className="mt-1 font-serif text-xl font-bold leading-tight text-ink">
+          {n.name}
         </h1>
-        {c.address && (
-          <div className="mt-1 text-sm text-faded">{c.address}</div>
+        {n.address && (
+          <div className="mt-1 text-sm text-faded">{n.address}</div>
         )}
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded">
-          {c.ortsteil && <span>{c.ortsteil}</span>}
-          {c.build_date && <span>Bauzeit:&nbsp;{c.build_date}</span>}
-          {c.nummer && <span>Denkmal-Nr.&nbsp;{c.nummer}</span>}
+          {n.ortsteil && <span>{n.ortsteil}</span>}
+          {n.build_date && <span>Bauzeit:&nbsp;{n.build_date}</span>}
+          {n.denkmal_nummer && (
+            <span>Denkmal-Nr.&nbsp;{n.denkmal_nummer}</span>
+          )}
         </div>
-        {c.description && (
+        {n.description && (
           <div className="article-body mt-5 text-[15px] text-ink">
-            {c.description.split(/\n+/).map((p, i) => (
+            {n.description.split(/\n+/).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
         )}
-        {c.registration_date && (
-          <div className="mt-4 text-xs text-faded">
-            Eingetragen seit {c.registration_date}
-          </div>
-        )}
-        <SourceLink href={c.source_url} />
+        <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded">
+          {n.source_url ? (
+            <a
+              href={n.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sepia underline hover:text-ink"
+            >
+              {sourceLabel}
+            </a>
+          ) : (
+            <span>{sourceLabel}</span>
+          )}
+        </div>
       </div>
     </article>
   );

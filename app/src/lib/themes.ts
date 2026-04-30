@@ -1,4 +1,4 @@
-export type ThemeId = "stolpersteine" | "baudenkmaeler";
+export type ThemeId = "stolpersteine" | "ns-orte";
 
 export const THEMES: Record<
   ThemeId,
@@ -9,9 +9,9 @@ export const THEMES: Record<
     clusterColor: "#7a5e3a",
     pointColor: "#a0522d",
   },
-  baudenkmaeler: {
-    label: "Baudenkmäler",
-    clusterColor: "#2f4f4f",
-    pointColor: "#5a7a78",
+  "ns-orte": {
+    label: "NS-Orte",
+    clusterColor: "#3a3530",
+    pointColor: "#5e4f30",
   },
 };
