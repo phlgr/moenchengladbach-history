@@ -55,6 +55,14 @@ function setPoiOpacity(map: MlMap, value: number) {
   }
 }
 
+function clearSelectionFilters(map: MlMap) {
+  for (const t of ORDERED_THEMES) {
+    if (map.getLayer(`${t}-points-selected`)) {
+      map.setFilter(`${t}-points-selected`, ["==", ["get", "id"], ""]);
+    }
+  }
+}
+
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -363,15 +371,7 @@ export function MapView() {
           const hits = map.queryRenderedFeatures(e.point, { layers });
           if (hits.length === 0 && selectionRef.current !== null) {
             setSelection(null);
-            for (const t of ORDERED_THEMES) {
-              if (map.getLayer(`${t}-points-selected`)) {
-                map.setFilter(`${t}-points-selected`, [
-                  "==",
-                  ["get", "id"],
-                  "",
-                ]);
-              }
-            }
+            clearSelectionFilters(map);
           }
         });
       });
@@ -419,10 +419,12 @@ export function MapView() {
 
         map.addSource("deportations", { type: "geojson", data: arcsFc });
 
-        // Store pristine destination data for exit cleanup.
-        destOrigDataRef.current = JSON.parse(
-          JSON.stringify(dests),
-        ) as GeoJSON.FeatureCollection;
+        // Keep a pristine copy of the original features for exit cleanup
+        // (mirrors the arcs approach above).
+        destOrigDataRef.current = {
+          type: "FeatureCollection",
+          features: dests.features,
+        };
 
         map.addSource("deportation-destinations", {
           type: "geojson",
@@ -858,9 +860,7 @@ export function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.isStyleLoaded()) return;
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = prefersReducedMotion();
 
     const now = performance.now();
 
@@ -1358,7 +1358,6 @@ export function MapView() {
         }
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deportationMode]);
 
   return (
@@ -1371,17 +1370,7 @@ export function MapView() {
         onClose={() => {
           setSelection(null);
           const map = mapRef.current;
-          if (map) {
-            for (const t of ORDERED_THEMES) {
-              if (map.getLayer(`${t}-points-selected`)) {
-                map.setFilter(`${t}-points-selected`, [
-                  "==",
-                  ["get", "id"],
-                  "",
-                ]);
-              }
-            }
-          }
+          if (map) clearSelectionFilters(map);
         }}
       />
     </>

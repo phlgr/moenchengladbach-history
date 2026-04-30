@@ -208,6 +208,14 @@ const THEME_LABELS: Partial<Record<ThemeId, string>> = {
   "ns-gedenkorte": "Gedenkort",
 };
 
+const SOURCE_LABELS: Record<string, string> = {
+  osm: "OpenStreetMap (ODbL)",
+  baudenkmal: "Wikipedia (CC BY-SA 4.0)",
+  "wikipedia-narrative": "Wikipedia (CC BY-SA 4.0)",
+  "wp-auto": "Wikipedia (CC BY-SA 4.0)",
+};
+const SOURCE_LABEL_FALLBACK = "Eigene Recherche";
+
 const NS_CATEGORY_LABELS: Record<string, string> = {
   destroyed_synagogue: "Zerstörte Synagoge",
   synagogue_memorial: "Gedenkort Synagoge",
@@ -485,16 +493,7 @@ function HeaderMedia({
 }
 
 function NsOrtView({ n }: { n: NsOrt }) {
-  const sourceLabel =
-    n.source === "osm"
-      ? "OpenStreetMap (ODbL)"
-      : n.source === "baudenkmal"
-        ? "Wikipedia (CC BY-SA 4.0)"
-        : n.source === "wikipedia-narrative"
-          ? "Wikipedia (CC BY-SA 4.0)"
-          : n.source === "wp-auto"
-            ? "Wikipedia (CC BY-SA 4.0)"
-            : "Eigene Recherche";
+  const sourceLabel = SOURCE_LABELS[n.source] ?? SOURCE_LABEL_FALLBACK;
   const categoryLabel = NS_CATEGORY_LABELS[n.category] ?? n.category;
   return (
     <article>

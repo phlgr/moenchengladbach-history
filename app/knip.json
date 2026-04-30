@@ -1,5 +1,6 @@
 {
   "ignoreBinaries": ["uv"],
+  "ignoreDependencies": ["@biomejs/biome", "tailwindcss"],
   "ignoreExportsUsedInFile": true,
   "workspaces": {
     "src/routes/*": {

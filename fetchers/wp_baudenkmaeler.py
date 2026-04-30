@@ -14,7 +14,6 @@ Coverage measured 2026-04-30: ~1000 entries with coordinates.
 from __future__ import annotations
 
 import json
-import re
 import sys
 import time
 from pathlib import Path
@@ -22,10 +21,7 @@ from pathlib import Path
 import httpx
 import mwparserfromhell as mwp
 
-UA = (
-    "moenchengladbach-history/0.1 "
-    "(https://github.com/pgrigorov/moenchengladbach-history; pg@bgdlabs.com) httpx"
-)
+from _common import UA, slugify, strip_wikitext
 
 PAGES = [
     "Liste der Baudenkmäler in Mönchengladbach (Denkmäler A–C)",
@@ -52,27 +48,6 @@ def fetch_wikitext(title: str) -> str:
     )
     r.raise_for_status()
     return r.text
-
-
-def strip_wikitext(s: str) -> str:
-    s = re.sub(r"<ref[^>]*>.*?</ref>", "", s, flags=re.DOTALL)
-    s = re.sub(r"<ref[^>]*/\s*>", "", s)
-    s = re.sub(r"&nbsp;", " ", s)
-    s = re.sub(r"<br\s*/?>", "\n", s)
-    s = re.sub(r"'''([^']+)'''", r"\1", s)
-    s = re.sub(r"''([^']+)''", r"\1", s)
-    s = re.sub(r"\[\[([^|\]]+)\|([^\]]+)\]\]", r"\2", s)
-    s = re.sub(r"\[\[([^\]]+)\]\]", r"\1", s)
-    s = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", s)
-    s = re.sub(r"\{\{[^{}]*\}\}", "", s)
-    return re.sub(r"\s+", " ", s).strip()
-
-
-def slugify(s: str) -> str:
-    s = s.lower()
-    s = re.sub(r"[äöüß]", lambda m: {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}[m.group(0)], s)
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    return s.strip("-")
 
 
 def parse_page(title: str, wikitext: str) -> list[dict]:

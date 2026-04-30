@@ -21,10 +21,7 @@ from pathlib import Path
 
 import httpx
 
-UA = (
-    "moenchengladbach-history/0.1 "
-    "(https://github.com/pgrigorov/moenchengladbach-history; pg@bgdlabs.com) httpx"
-)
+from _common import UA, slugify
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "raw" / "ns_orte_osm.json"
 
@@ -129,14 +126,6 @@ def is_ns_related(tags: dict[str, str]) -> tuple[bool, str]:
         return True, "ns_victim_memorial"
 
     return False, ""
-
-
-def slugify(s: str) -> str:
-    s = (s or "").lower()
-    table = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
-    s = "".join(table.get(c, c) for c in s)
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    return s.strip("-") or "x"
 
 
 def main() -> None:

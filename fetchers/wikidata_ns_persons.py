@@ -27,10 +27,7 @@ from pathlib import Path
 
 import httpx
 
-UA = (
-    "moenchengladbach-history/0.1 "
-    "(https://github.com/pgrigorov/moenchengladbach-history; pg@bgdlabs.com) httpx"
-)
+from _common import UA
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "raw" / "ns_personen.json"
 

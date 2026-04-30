@@ -27,10 +27,7 @@ from pathlib import Path
 
 import httpx
 
-UA = (
-    "moenchengladbach-history/0.1 "
-    "(https://github.com/pgrigorov/moenchengladbach-history; pg@bgdlabs.com) httpx"
-)
+from _common import UA, slugify, strip_wikitext
 
 OUT = Path(__file__).resolve().parent.parent / "data" / "raw" / "ns_orte_auto.json"
 
@@ -73,28 +70,6 @@ def geocode(query: str) -> tuple[float, float] | None:
     if not data:
         return None
     return float(data[0]["lat"]), float(data[0]["lon"])
-
-
-def strip_wikitext(s: str) -> str:
-    s = re.sub(r"<ref[^>]*>.*?</ref>", "", s, flags=re.DOTALL)
-    s = re.sub(r"<ref[^/]*/\s*>", "", s)
-    s = re.sub(r"&nbsp;", " ", s)
-    s = re.sub(r"<br\s*/?>", " ", s)
-    s = re.sub(r"'''([^']+)'''", r"\1", s)
-    s = re.sub(r"''([^']+)''", r"\1", s)
-    s = re.sub(r"\[\[([^|\]]+)\|([^\]]+)\]\]", r"\2", s)
-    s = re.sub(r"\[\[([^\]]+)\]\]", r"\1", s)
-    s = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", s)
-    s = re.sub(r"\{\{[^{}]*\}\}", "", s)
-    return re.sub(r"\s+", " ", s).strip()
-
-
-def slugify(s: str) -> str:
-    s = (s or "").lower()
-    table = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
-    s = "".join(table.get(c, c) for c in s)
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    return s.strip("-") or "x"
 
 
 # ---------------------------------------------------------------------- bunkers

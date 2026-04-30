@@ -26,7 +26,7 @@ from pathlib import Path
 
 import httpx
 
-UA = "moenchengladbach-history/0.1 (https://github.com/pgrigorov/moenchengladbach-history; pg@bgdlabs.com) httpx"
+from _common import UA, strip_wikitext as _strip_wikitext
 
 PAGES = [
     ("nord", "Liste der Stolpersteine in Mönchengladbach – Stadtbezirk Nord"),
@@ -60,18 +60,7 @@ ROW_START_RE = re.compile(r'^\|-\s*(?:id="([^"]*)")?', re.MULTILINE)
 
 
 def strip_wikitext(s: str) -> str:
-    """Cheap pass to make a wikitext fragment readable as plain text."""
-    s = re.sub(r"<ref[^>]*>.*?</ref>", "", s, flags=re.DOTALL)
-    s = re.sub(r"<ref[^>]*/\s*>", "", s)
-    s = re.sub(r"&nbsp;", " ", s)
-    s = re.sub(r"<br\s*/?>", "\n", s)
-    s = re.sub(r"'''([^']+)'''", r"\1", s)
-    s = re.sub(r"''([^']+)''", r"\1", s)
-    s = re.sub(r"\[\[([^|\]]+)\|([^\]]+)\]\]", r"\2", s)
-    s = re.sub(r"\[\[([^\]]+)\]\]", r"\1", s)
-    s = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", s)
-    s = re.sub(r"\{\{[^{}]*\}\}", "", s)
-    return s.strip()
+    return _strip_wikitext(s, preserve_breaks=True)
 
 
 def split_rows(table_block: str) -> list[tuple[str | None, str]]:
