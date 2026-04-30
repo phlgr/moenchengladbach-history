@@ -1,9 +1,14 @@
+import type {
+  ExpressionSpecification,
+  GeoJSONSource,
+  LayerSpecification,
+  Map as MlMap,
+} from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
-import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
-import { Sidebar, type SidebarSelection } from "./Sidebar";
+import { useLayerState } from "../lib/layerState";
 import { createMapStyle } from "../lib/mapStyle";
 import { THEMES, type ThemeId } from "../lib/themes";
-import { useLayerState } from "../lib/layerState";
+import { Sidebar, type SidebarSelection } from "./Sidebar";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
 const MG_DEFAULT_ZOOM = 12;
@@ -31,14 +36,6 @@ const ORDERED_THEMES: ThemeId[] = [
 function contentDirFor(theme: ThemeId): string {
   return theme === "stolpersteine" ? "stolpersteine" : "ns-orte";
 }
-
-const DEPORTATION_LAYERS = [
-  "deportation-arcs",
-  "deportation-arcs-glow",
-  "deportation-dest-circle",
-  "deportation-dest-ring",
-  "deportation-dest-label",
-];
 
 const POI_OPACITY_PROPS: Array<{ suffix: string; prop: string }> = [
   { suffix: "-clusters", prop: "circle-opacity" },
@@ -154,7 +151,9 @@ function paintRecentLife(
 function ensureRecentTicker(
   map: MlMap,
   cumulativeRef: React.MutableRefObject<Record<string, GeoJSON.Feature[]>>,
-  lifeRef: React.MutableRefObject<Record<string, Map<string, RecentLifeFeature>>>,
+  lifeRef: React.MutableRefObject<
+    Record<string, Map<string, RecentLifeFeature>>
+  >,
   tickerRef: React.MutableRefObject<number | null>,
   reduceMotion: boolean,
 ) {
@@ -254,7 +253,7 @@ export function MapView() {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map?.isStyleLoaded()) return;
     for (const theme of ORDERED_THEMES) {
       const visible = active[theme] ? "visible" : "none";
       for (const lid of [
@@ -274,6 +273,7 @@ export function MapView() {
     }
   }, [active]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: map init runs once on mount, uses refs for dynamic values
   useEffect(() => {
     if (!containerRef.current) return;
     let cancelled = false;
@@ -348,7 +348,10 @@ export function MapView() {
             );
           sync();
           attribObserver = new MutationObserver(sync);
-          attribObserver.observe(attribEl, { attributes: true, attributeFilter: ["class"] });
+          attribObserver.observe(attribEl, {
+            attributes: true,
+            attributeFilter: ["class"],
+          });
         }
 
         map.on("click", (e) => {
@@ -396,15 +399,19 @@ export function MapView() {
         };
 
         // Keep a pristine copy for exit cleanup (reset truncated coords).
-        arcOrigDataRef.current = { type: "FeatureCollection", features: arcs.features };
+        arcOrigDataRef.current = {
+          type: "FeatureCollection",
+          features: arcs.features,
+        };
 
         // Store full coordinates on each feature so the trace loop always
         // has fresh data — MapLibre may replace objects internally after
         // setData, so we never rely on mutated geometry persisting.
         for (const f of arcsFc.features) {
-          const coords = f.geometry?.type === "LineString"
-            ? (f.geometry as GeoJSON.LineString).coordinates
-            : null;
+          const coords =
+            f.geometry?.type === "LineString"
+              ? (f.geometry as GeoJSON.LineString).coordinates
+              : null;
           if (coords) {
             (f.properties as Record<string, unknown>)["_full_coords"] = coords;
           }
@@ -472,11 +479,7 @@ export function MapView() {
           source: "deportation-destinations",
           paint: {
             "circle-color": "transparent",
-            "circle-opacity": [
-              "*",
-              ["coalesce", ["get", "_fade"], 0],
-              1,
-            ],
+            "circle-opacity": ["*", ["coalesce", ["get", "_fade"], 0], 1],
             "circle-stroke-color": "#1c1814",
             "circle-stroke-width": 1,
             "circle-stroke-opacity": [
@@ -502,11 +505,7 @@ export function MapView() {
           source: "deportation-destinations",
           paint: {
             "circle-color": "#8a1f0e",
-            "circle-opacity": [
-              "*",
-              ["coalesce", ["get", "_fade"], 0],
-              1,
-            ],
+            "circle-opacity": ["*", ["coalesce", ["get", "_fade"], 0], 1],
             "circle-stroke-color": "#faf3df",
             "circle-stroke-width": 1.6,
             "circle-radius": [
@@ -536,15 +535,7 @@ export function MapView() {
               { "font-scale": 0.85 },
             ],
             "text-font": ["Noto Sans Regular"],
-            "text-size": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              4,
-              10,
-              7,
-              13,
-            ],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 4, 10, 7, 13],
             "text-offset": [0, 1.4],
             "text-anchor": "top",
             "text-letter-spacing": 0.04,
@@ -554,11 +545,7 @@ export function MapView() {
             "text-color": "#1c1814",
             "text-halo-color": "#f5edd6",
             "text-halo-width": 1.5,
-            "text-opacity": [
-              "*",
-              ["coalesce", ["get", "_fade"], 0],
-              1,
-            ],
+            "text-opacity": ["*", ["coalesce", ["get", "_fade"], 0], 1],
           },
         });
       }
@@ -604,7 +591,7 @@ export function MapView() {
               "*",
               HALO_MAX_OPACITY,
               ["coalesce", ["get", "_fade"], 0],
-            ] as any,
+            ] as ExpressionSpecification,
             "circle-blur": 0.6,
             "circle-radius": [
               "interpolate",
@@ -629,7 +616,7 @@ export function MapView() {
               "coalesce",
               ["get", "_fade"],
               0,
-            ] as any,
+            ] as ExpressionSpecification,
             "circle-radius": [
               "interpolate",
               ["linear"],
@@ -654,7 +641,7 @@ export function MapView() {
               "*",
               HALO_MAX_OPACITY,
               ["coalesce", ["get", "_fade_max"], 0],
-            ] as any,
+            ] as ExpressionSpecification,
             "circle-blur": 0.6,
             "circle-radius": [
               "step",
@@ -680,7 +667,7 @@ export function MapView() {
               "coalesce",
               ["get", "_fade_max"],
               0,
-            ] as any,
+            ] as ExpressionSpecification,
             "circle-radius": [
               "step",
               ["get", "point_count"],
@@ -705,7 +692,6 @@ export function MapView() {
       mapInstance?.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Shared layer-creation helper used both during initial map setup
@@ -751,15 +737,7 @@ export function MapView() {
           "circle-color": colors.clusterColor,
           "circle-stroke-color": "#faf8f5",
           "circle-stroke-width": 2,
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            13,
-            10,
-            17,
-            50,
-            22,
-          ],
+          "circle-radius": ["step", ["get", "point_count"], 13, 10, 17, 50, 22],
           // When the timeline ticks bring fresh features into a
           // cluster, the radius bumps to the next step. This eases the
           // jump so bubbles visibly breathe rather than snap. Honors
@@ -785,7 +763,7 @@ export function MapView() {
       });
     }
 
-    const pointsLayer: any = {
+    const pointsLayer: LayerSpecification = {
       id: `${theme}-points`,
       type: "circle",
       source: theme,
@@ -795,9 +773,9 @@ export function MapView() {
         "circle-stroke-width": 1.5,
         "circle-radius": cluster
           ? ["interpolate", ["linear"], ["zoom"], 12, 4, 16, 7]
-          // When clustering is off, scale points up slightly at the
-          // mid zooms so individuals stay visible across the city.
-          : ["interpolate", ["linear"], ["zoom"], 10, 3, 14, 5, 17, 8],
+          : // When clustering is off, scale points up slightly at the
+            // mid zooms so individuals stay visible across the city.
+            ["interpolate", ["linear"], ["zoom"], 10, 3, 14, 5, 17, 8],
       },
     };
     if (cluster) {
@@ -814,15 +792,7 @@ export function MapView() {
         "circle-color": colors.pointColor,
         "circle-stroke-color": "#3a3530",
         "circle-stroke-width": 2.5,
-        "circle-radius": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          12,
-          7,
-          16,
-          11,
-        ],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 7, 16, 11],
       },
     });
 
@@ -887,7 +857,7 @@ export function MapView() {
   // already moved several months ahead.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map?.isStyleLoaded()) return;
     const reduceMotion =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -898,9 +868,10 @@ export function MapView() {
       const original = sourceDataRef.current[theme];
       if (!original) continue;
 
-      const life =
-        recentLifeRef.current[theme] ??
-        (recentLifeRef.current[theme] = new Map());
+      const life = recentLifeRef.current[theme] ?? new Map();
+      if (!recentLifeRef.current[theme]) {
+        recentLifeRef.current[theme] = life;
+      }
 
       let cumulativeFeatures: GeoJSON.Feature[];
       if (currentDate === null) {
@@ -988,7 +959,7 @@ export function MapView() {
         if (effectIdRef.current === -1) return;
         const t = Math.min(1, (now - start) / ms);
         // ease-in-out cubic
-        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
         onTick(from + (to - from) * e);
         if (t < 1) raf = requestAnimationFrame(step);
         else onDone?.();
@@ -998,7 +969,7 @@ export function MapView() {
 
     // ease-out cubic — head decelerates as it approaches destination
     function easeOutCubic(t: number): number {
-      return 1 - Math.pow(1 - t, 3);
+      return 1 - (1 - t) ** 3;
     }
 
     if (deportationMode) {
@@ -1013,34 +984,33 @@ export function MapView() {
       // entry — without this, the second toggle-on shows arcs but no
       // destination markers (paint stuck at constant 0 from the prior fade).
       if (map.getLayer("deportation-dest-circle")) {
-        map.setPaintProperty(
-          "deportation-dest-circle",
-          "circle-opacity",
-          ["coalesce", ["get", "_fade"], 0] as any,
-        );
+        map.setPaintProperty("deportation-dest-circle", "circle-opacity", [
+          "coalesce",
+          ["get", "_fade"],
+          0,
+        ] as ExpressionSpecification);
       }
       if (map.getLayer("deportation-dest-ring")) {
-        map.setPaintProperty(
-          "deportation-dest-ring",
-          "circle-opacity",
-          ["coalesce", ["get", "_fade"], 0] as any,
-        );
-        map.setPaintProperty(
-          "deportation-dest-ring",
-          "circle-stroke-opacity",
-          ["*", ["coalesce", ["get", "_fade"], 0], 0.6] as any,
-        );
+        map.setPaintProperty("deportation-dest-ring", "circle-opacity", [
+          "coalesce",
+          ["get", "_fade"],
+          0,
+        ] as ExpressionSpecification);
+        map.setPaintProperty("deportation-dest-ring", "circle-stroke-opacity", [
+          "*",
+          ["coalesce", ["get", "_fade"], 0],
+          0.6,
+        ] as ExpressionSpecification);
       }
       if (map.getLayer("deportation-dest-label")) {
-        map.setPaintProperty(
-          "deportation-dest-label",
-          "text-opacity",
-          ["coalesce", ["get", "_fade"], 0] as any,
-        );
+        map.setPaintProperty("deportation-dest-label", "text-opacity", [
+          "coalesce",
+          ["get", "_fade"],
+          0,
+        ] as ExpressionSpecification);
       }
 
-      const narrow =
-        typeof window !== "undefined" && window.innerWidth < 640;
+      const narrow = typeof window !== "undefined" && window.innerWidth < 640;
       map.fitBounds(
         [
           [3.5, 47.8],
@@ -1074,30 +1044,21 @@ export function MapView() {
               v * 0.35,
             );
           });
-          animate(
-            0,
-            1,
-            900,
-            (v) => {
-              if (id !== effectIdRef.current) return;
-              if (!map.getLayer("deportation-dest-circle")) return;
-              map.setPaintProperty(
-                "deportation-dest-circle",
-                "circle-opacity",
-                v,
-              );
-              map.setPaintProperty(
-                "deportation-dest-ring",
-                "circle-stroke-opacity",
-                v * 0.6,
-              );
-              map.setPaintProperty(
-                "deportation-dest-label",
-                "text-opacity",
-                v,
-              );
-            },
-          );
+          animate(0, 1, 900, (v) => {
+            if (id !== effectIdRef.current) return;
+            if (!map.getLayer("deportation-dest-circle")) return;
+            map.setPaintProperty(
+              "deportation-dest-circle",
+              "circle-opacity",
+              v,
+            );
+            map.setPaintProperty(
+              "deportation-dest-ring",
+              "circle-stroke-opacity",
+              v * 0.6,
+            );
+            map.setPaintProperty("deportation-dest-label", "text-opacity", v);
+          });
         }, 800);
         return () => {
           effectIdRef.current = -1;
@@ -1111,14 +1072,19 @@ export function MapView() {
 
         // --- Per-arc trace animation ---
         if (id !== effectIdRef.current) return;
-        const arcsSrc = map.getSource("deportations") as GeoJSONSource | undefined;
-        const destsSrc = map.getSource("deportation-destinations") as GeoJSONSource | undefined;
+        const arcsSrc = map.getSource("deportations") as
+          | GeoJSONSource
+          | undefined;
+        const destsSrc = map.getSource("deportation-destinations") as
+          | GeoJSONSource
+          | undefined;
         if (!arcsSrc || !destsSrc) return;
 
         // Snapshot original arc features (full coords + properties).
         const origArcs = (await arcsSrc.getData()) as GeoJSON.FeatureCollection;
         // Snapshot original destination features.
-        const origDests = (await destsSrc.getData()) as GeoJSON.FeatureCollection;
+        const origDests =
+          (await destsSrc.getData()) as GeoJSON.FeatureCollection;
 
         if (id !== effectIdRef.current) return;
 
@@ -1136,11 +1102,13 @@ export function MapView() {
         const mg: [number, number] = MG_CENTER;
         function haversine(a: [number, number], b: [number, number]): number {
           const R = 6371e3;
-          const dLat = (b[1] - a[1]) * Math.PI / 180;
-          const dLon = (b[0] - a[0]) * Math.PI / 180;
-          const x = Math.sin(dLat / 2) ** 2 +
-            Math.cos(a[1] * Math.PI / 180) * Math.cos(b[1] * Math.PI / 180) *
-            Math.sin(dLon / 2) ** 2;
+          const dLat = ((b[1] - a[1]) * Math.PI) / 180;
+          const dLon = ((b[0] - a[0]) * Math.PI) / 180;
+          const x =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos((a[1] * Math.PI) / 180) *
+              Math.cos((b[1] * Math.PI) / 180) *
+              Math.sin(dLon / 2) ** 2;
           return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
         }
 
@@ -1148,16 +1116,20 @@ export function MapView() {
         type ArcEntry = { orig: GeoJSON.Feature; dist: number };
         const arcsByDist: ArcEntry[] = [];
         for (const f of origArcs.features) {
-          const coords = f.geometry?.type === "LineString"
-            ? (f.geometry as GeoJSON.LineString).coordinates
-            : null;
+          const coords =
+            f.geometry?.type === "LineString"
+              ? (f.geometry as GeoJSON.LineString).coordinates
+              : null;
           if (!coords || coords.length < 2) continue;
-          arcsByDist.push({ orig: f, dist: haversine(mg, coords[coords.length - 1] as [number, number]) });
+          arcsByDist.push({
+            orig: f,
+            dist: haversine(mg, coords[coords.length - 1] as [number, number]),
+          });
         }
         arcsByDist.sort((a, b) => a.dist - b.dist);
 
         const TRACE_DURATION = 1100; // ms per arc
-        const STAGGER_SPAN = 1800;   // total stagger window for all arcs
+        const STAGGER_SPAN = 1800; // total stagger window for all arcs
 
         const staggerDelayForIndex = (i: number, n: number) => {
           if (n <= 1) return 0;
@@ -1165,7 +1137,11 @@ export function MapView() {
         };
 
         // Per-destination fade state.
-        type DestFadeState = { cur: number; start: number | null; active: boolean };
+        type DestFadeState = {
+          cur: number;
+          start: number | null;
+          active: boolean;
+        };
         const destFades = new Map<string, DestFadeState>();
 
         function traceFrame() {
@@ -1182,7 +1158,8 @@ export function MapView() {
 
             const orig = arcsByDist[i].orig;
             const props = orig.properties ?? {};
-            const fullCoords = (orig.geometry as GeoJSON.LineString).coordinates as [number, number][];
+            const fullCoords = (orig.geometry as GeoJSON.LineString)
+              .coordinates as [number, number][];
 
             // Truncate to prefix up to current head position.
             const headIndex = Math.min(
@@ -1202,13 +1179,13 @@ export function MapView() {
             const destName = props["dest_name"] as string;
             if (raw >= 1) {
               let ds = destFades.get(destName);
-              if (!ds || !ds.active) {
+              if (!ds?.active) {
                 ds = { cur: 0, start: now, active: true };
                 destFades.set(destName, ds);
               }
-              const ft = Math.min(1, (now - (ds.start!)) / 250);
+              const ft = Math.min(1, (now - ds.start!) / 250);
               // ease-out cubic for gentle pop-in
-              ds.cur = ft < 0.5 ? 4 * ft * ft * ft : 1 - Math.pow(-2 * ft + 2, 3) / 2;
+              ds.cur = ft < 0.5 ? 4 * ft * ft * ft : 1 - (-2 * ft + 2) ** 3 / 2;
             } else {
               const ds = destFades.get(destName);
               if (ds && ds.cur > 0) {
@@ -1218,29 +1195,35 @@ export function MapView() {
           }
 
           // Build fresh destination features with per-destination _fade.
-          const destFeatures: GeoJSON.Feature[] = origDests.features.map((d) => {
-            const props = d.properties ?? {};
-            const name = props["name"] as string;
-            if (!name) return d;
+          const destFeatures: GeoJSON.Feature[] = origDests.features.map(
+            (d) => {
+              const props = d.properties ?? {};
+              const name = props["name"] as string;
+              if (!name) return d;
 
-            let fade = 0;
-            const ds = destFades.get(name);
-            if (ds && ds.cur > 0) {
-              fade = ds.cur;
-            }
-            return { ...d, properties: { ...props, _fade: fade } };
-          });
+              let fade = 0;
+              const ds = destFades.get(name);
+              if (ds && ds.cur > 0) {
+                fade = ds.cur;
+              }
+              return { ...d, properties: { ...props, _fade: fade } };
+            },
+          );
 
           // Feed updated data back to sources.
           if (!arcsSrc || !destsSrc) return;
           arcsSrc.setData({ type: "FeatureCollection", features: arcFeatures });
-          destsSrc.setData({ type: "FeatureCollection", features: destFeatures });
+          destsSrc.setData({
+            type: "FeatureCollection",
+            features: destFeatures,
+          });
 
           // Stop when all arcs are fully drawn and destinations have faded in.
-          const allDone = arcsByDist.every((_, i) => {
-            const elapsed = now - arcStartTimes[i];
-            return Math.max(0, elapsed / TRACE_DURATION) >= 1;
-          }) && [...destFades.values()].every(ds => ds.cur >= 1);
+          const allDone =
+            arcsByDist.every((_, i) => {
+              const elapsed = now - arcStartTimes[i];
+              return Math.max(0, elapsed / TRACE_DURATION) >= 1;
+            }) && [...destFades.values()].every((ds) => ds.cur >= 1);
           if (!allDone) {
             raf = requestAnimationFrame(traceFrame);
           } else {
@@ -1248,8 +1231,9 @@ export function MapView() {
           }
         }
 
-        const arcStartTimes = arcsByDist.map((_, i) =>
-          performance.now() + staggerDelayForIndex(i, arcsByDist.length),
+        const arcStartTimes = arcsByDist.map(
+          (_, i) =>
+            performance.now() + staggerDelayForIndex(i, arcsByDist.length),
         );
 
         // Start trace loop after a dramatic still beat — let the empty map
@@ -1262,7 +1246,11 @@ export function MapView() {
             if (id !== effectIdRef.current) return;
             if (!map.getLayer("deportation-arcs")) return;
             map.setPaintProperty("deportation-arcs", "line-opacity", v);
-            map.setPaintProperty("deportation-arcs-glow", "line-opacity", v * 0.35);
+            map.setPaintProperty(
+              "deportation-arcs-glow",
+              "line-opacity",
+              v * 0.35,
+            );
           });
 
           raf = requestAnimationFrame(traceFrame);
@@ -1291,16 +1279,28 @@ export function MapView() {
         function step(now: number) {
           if (id !== effectIdRef.current || !map) return;
           const t = Math.min(1, (now - start) / 500);
-          const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-          const v = (1 - e);
+          const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+          const v = 1 - e;
 
           if (map.getLayer("deportation-arcs")) {
             map.setPaintProperty("deportation-arcs", "line-opacity", v * 0.85);
-            map.setPaintProperty("deportation-arcs-glow", "line-opacity", v * 0.35);
+            map.setPaintProperty(
+              "deportation-arcs-glow",
+              "line-opacity",
+              v * 0.35,
+            );
           }
           if (map.getLayer("deportation-dest-circle")) {
-            map.setPaintProperty("deportation-dest-circle", "circle-opacity", v);
-            map.setPaintProperty("deportation-dest-ring", "circle-stroke-opacity", v * 0.6);
+            map.setPaintProperty(
+              "deportation-dest-circle",
+              "circle-opacity",
+              v,
+            );
+            map.setPaintProperty(
+              "deportation-dest-ring",
+              "circle-stroke-opacity",
+              v * 0.6,
+            );
             map.setPaintProperty("deportation-dest-label", "text-opacity", v);
           }
 
@@ -1331,7 +1331,9 @@ export function MapView() {
         if (raf2) cancelAnimationFrame(raf2);
         // Reset source data to pristine coordinates + zero progress.
         if (!map) return;
-        const arcsSrc = map.getSource("deportations") as GeoJSONSource | undefined;
+        const arcsSrc = map.getSource("deportations") as
+          | GeoJSONSource
+          | undefined;
         if (arcsSrc && arcOrigDataRef.current) {
           arcsSrc.setData({
             type: "FeatureCollection",
@@ -1342,7 +1344,9 @@ export function MapView() {
           });
         }
         // Also reset destination fade state.
-        const destsSrc = map.getSource("deportation-destinations") as GeoJSONSource | undefined;
+        const destsSrc = map.getSource("deportation-destinations") as
+          | GeoJSONSource
+          | undefined;
         if (destsSrc && destOrigDataRef.current) {
           destsSrc.setData({
             type: "FeatureCollection",

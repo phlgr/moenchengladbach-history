@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useLayerState } from "../lib/layerState";
 import { useReducedMotion } from "../lib/useReducedMotion";
 
@@ -77,23 +77,28 @@ export function Timeline() {
     return () => window.clearTimeout(t);
   }, [currentDate, playing, reduceMotion, displayedDate]);
 
+  // Keep refs in sync so the play interval always reads current values.
+  const idxRef = useRef(idx);
+  idxRef.current = idx;
+  const setCurrentDateRef = useRef(setCurrentDate);
+  setCurrentDateRef.current = setCurrentDate;
+
   useEffect(() => {
     if (!playing) return;
-    let i = idx ?? 0;
-    setCurrentDate(monthIndexToDate(i));
+    let i = idxRef.current ?? 0;
+    setCurrentDateRef.current(monthIndexToDate(i));
     const tick = setInterval(() => {
       i += 1;
       if (i >= TOTAL_MONTHS) {
         clearInterval(tick);
         setPlaying(false);
         // Hold the final month for a beat, then return to "Alle".
-        setTimeout(() => setCurrentDate(null), 1800);
+        setTimeout(() => setCurrentDateRef.current(null), 1800);
         return;
       }
-      setCurrentDate(monthIndexToDate(i));
+      setCurrentDateRef.current(monthIndexToDate(i));
     }, PLAY_INTERVAL_MS);
     return () => clearInterval(tick);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
   const showAll = currentDate === null;
@@ -116,7 +121,9 @@ export function Timeline() {
   }
 
   return (
-    <div className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-5rem))] -translate-x-1/2`}>
+    <div
+      className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-5rem))] -translate-x-1/2`}
+    >
       <div className="akte-grain akte-reveal relative flex items-stretch gap-3 border border-paper-edge bg-paper-light/95 px-4 py-2.5 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
         <button
           type="button"
@@ -324,7 +331,9 @@ function MonthScale({
               style={{
                 fontFamily: "var(--font-mono)",
                 fontSize: "0.55rem",
-                color: passed ? "var(--color-faded)" : "var(--color-faded-light)",
+                color: passed
+                  ? "var(--color-faded)"
+                  : "var(--color-faded-light)",
                 top: "-12px",
                 left: "50%",
                 transform: "translateX(-50%)",
@@ -380,4 +389,3 @@ function MonthScale({
     </div>
   );
 }
-

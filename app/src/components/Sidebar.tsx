@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Fence,
   Flame,
@@ -6,15 +5,16 @@ import {
   Gavel,
   Hammer,
   Landmark,
+  type LucideIcon,
   Shield,
   Signpost,
-  Stone,
+  Stone as StoneIcon,
   X,
-  type LucideIcon,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ThemeId } from "../lib/themes";
 
-type Stone = {
+type Stolperstein = {
   id: string;
   name: string;
   install_date: string | null;
@@ -31,7 +31,7 @@ type StolpersteinGroup = {
   lat: number;
   lng: number;
   source_url: string;
-  stones: Stone[];
+  stones: Stolperstein[];
 };
 
 type NsOrt = {
@@ -57,9 +57,11 @@ type NsOrt = {
   roles?: string[];
 };
 
-export type SidebarSelection =
-  | { theme: ThemeId; id: string; contentDir: string }
-  | null;
+export type SidebarSelection = {
+  theme: ThemeId;
+  id: string;
+  contentDir: string;
+} | null;
 
 function normaliseFilename(filename: string): string {
   return filename
@@ -102,6 +104,7 @@ function StarOfDavid({
       strokeLinejoin="round"
       className={className}
     >
+      <title>Star of David</title>
       <path d="M12 1 L21.526 17.5 L2.474 17.5 Z" />
       <path d="M12 23 L2.474 6.5 L21.526 6.5 Z" />
     </svg>
@@ -126,7 +129,7 @@ const CATEGORY_ICONS: Record<string, CategoryIcon> = {
   ns_victim_memorial: Landmark,
   ns_memorial: Landmark,
   memorial_other: Landmark,
-  stolperstein: Stone,
+  stolperstein: StoneIcon,
 };
 
 function MediaPlaceholder({
@@ -151,10 +154,7 @@ function MediaPlaceholder({
       <CornerMark className="right-3 top-3" position="tr" />
       <CornerMark className="bottom-3 left-3" position="bl" />
       <CornerMark className="bottom-3 right-3" position="br" />
-      <Icon
-        className="h-16 w-16 text-sepia/70"
-        strokeWidth={1.1}
-      />
+      <Icon className="h-16 w-16 text-sepia/70" strokeWidth={1.1} />
       <div className="akte-label" style={{ fontSize: "0.6rem" }}>
         {label}
       </div>
@@ -190,6 +190,7 @@ function CornerMark({
       stroke="currentColor"
       strokeWidth="1.1"
     >
+      <title>Corner decoration</title>
       <path d={lines[position]} />
     </svg>
   );
@@ -232,9 +233,9 @@ export function Sidebar({
   selection: SidebarSelection;
   onClose: () => void;
 }) {
-  const [content, setContent] = useState<
-    StolpersteinGroup | NsOrt | null
-  >(null);
+  const [content, setContent] = useState<StolpersteinGroup | NsOrt | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -323,10 +324,7 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="flex flex-col items-center gap-3 px-5 py-16">
-            <div
-              aria-hidden
-              className="h-px w-12 animate-pulse bg-sepia/60"
-            />
+            <div aria-hidden className="h-px w-12 animate-pulse bg-sepia/60" />
             <div className="akte-label">Lade Akte</div>
           </div>
         )}
@@ -365,9 +363,7 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
           <span className="text-faded-light">Adresse</span>
           <span className="h-px flex-1 bg-paper-edge/70" />
           <span className="tabular-nums text-faded">
-            {g.stones.length === 1
-              ? "1 Person"
-              : `${g.stones.length} Personen`}
+            {g.stones.length === 1 ? "1 Person" : `${g.stones.length} Personen`}
           </span>
         </div>
         <h1
@@ -420,12 +416,12 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
                   {s.name}
                 </h2>
                 {s.inscription && (
-                  <pre
+                  <section
                     aria-label="Inschrift"
                     className="inscription mt-3 text-[0.82rem]"
                   >
                     {s.inscription}
-                  </pre>
+                  </section>
                 )}
               </div>
             </div>
@@ -527,18 +523,12 @@ function NsOrtView({ n }: { n: NsOrt }) {
           </div>
         )}
         <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 border-y border-paper-edge/60 py-3">
-          {n.ortsteil && (
-            <MetaCell label="Ortsteil" value={n.ortsteil} />
-          )}
-          {n.build_date && (
-            <MetaCell label="Bauzeit" value={n.build_date} />
-          )}
+          {n.ortsteil && <MetaCell label="Ortsteil" value={n.ortsteil} />}
+          {n.build_date && <MetaCell label="Bauzeit" value={n.build_date} />}
           {n.denkmal_nummer && (
             <MetaCell label="Denkmal-Nr." value={n.denkmal_nummer} />
           )}
-          {n.lifespan && (
-            <MetaCell label="Lebensdaten" value={n.lifespan} />
-          )}
+          {n.lifespan && <MetaCell label="Lebensdaten" value={n.lifespan} />}
           {n.ns_name && (
             <MetaCell
               label={n.ns_period ? `NS-Name (${n.ns_period})` : "NS-Name"}

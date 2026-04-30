@@ -9,9 +9,9 @@
     "build": "bun run build:data && vite build",
     "start": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src",
-    "format": "biome format --write src",
-    "knip": "knip"
+    "lint": "find src -name '*.ts' -o -name '*.tsx' -o -name '*.css' | grep -v routeTree.gen.ts | xargs --no-run-if-empty bun x biome check",
+    "format": "find src -name '*.ts' -o -name '*.tsx' -o -name '*.css' | grep -v routeTree.gen.ts | xargs --no-run-if-empty bun x biome format --write",
+    "knip": "knip --use-tsconfig-files"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",
@@ -34,7 +34,6 @@
     "protomaps-themes-base": "^4.5.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-map-gl": "^8.1.1",
     "vite": "^8.0.10"
   }
 }

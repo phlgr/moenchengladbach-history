@@ -1,0 +1,9 @@
+{
+  "ignoreBinaries": ["uv"],
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    "src/routes/*": {
+      "entry": ["index.tsx", "__root.tsx"]
+    }
+  }
+}

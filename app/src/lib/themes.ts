@@ -73,36 +73,6 @@ export const THEMES: Record<ThemeId, Theme> = {
   },
 };
 
-/** Map our internal NS-Orte category strings to ThemeId. */
-export function nsCategoryToTheme(category: string): ThemeId {
-  switch (category) {
-    case "destroyed_synagogue":
-    case "synagogue_memorial":
-      return "ns-synagogen";
-    case "jewish_cemetery":
-    case "jewish_site":
-      return "ns-friedhoefe";
-    case "bunker":
-      return "ns-bunker";
-    case "stolperschwelle":
-      return "ns-stolperschwellen";
-    case "forced_labor":
-    case "pow_camp_memorial":
-    case "concentration_camp":
-      return "ns-zwangsarbeit";
-    case "perpetrator_site":
-      return "ns-taeter";
-    case "renamed_street":
-      return "ns-strassen";
-    case "ns_victim_memorial":
-    case "ns_memorial":
-    case "resistance_memorial":
-    case "memorial_other":
-    default:
-      return "ns-gedenkorte";
-  }
-}
-
 /** Group ThemeIds by their group label, in display order. */
 export function themesByGroup(): Array<{ group: string; themes: ThemeId[] }> {
   const groups = new Map<string, ThemeId[]>();

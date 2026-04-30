@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MapView } from "../components/MapView";
-import { LayerToggle } from "../components/LayerToggle";
 import { DeportationToggle } from "../components/DeportationToggle";
+import { LayerToggle } from "../components/LayerToggle";
+import { MapView } from "../components/MapView";
 import { Timeline } from "../components/Timeline";
 import { LayerStateContext } from "../lib/layerState";
 import { THEMES, type ThemeId } from "../lib/themes";
@@ -22,9 +22,7 @@ function HomePage() {
   });
   const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
   const [deportationMode, setDeportationMode] = useState(false);
-  const [deportationCount, setDeportationCount] = useState<number | null>(
-    null,
-  );
+  const [deportationCount, setDeportationCount] = useState<number | null>(null);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [attributionExpanded, setAttributionExpanded] = useState(false);
 
@@ -85,7 +83,9 @@ function HomePage() {
                 Eine Geschichtskarte
               </span>
             </h1>
-            <div className="akte-meta text-[0.6rem] sm:pt-0.5 sm:text-[0.62rem]">1933 — 1945</div>
+            <div className="akte-meta text-[0.6rem] sm:pt-0.5 sm:text-[0.62rem]">
+              1933 — 1945
+            </div>
           </div>
 
           <LayerToggle />

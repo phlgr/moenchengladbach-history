@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import type { ThemeId } from "./themes";
 
-export type LayerState = {
+type LayerState = {
   active: Record<ThemeId, boolean>;
   counts: Partial<Record<ThemeId, number>>;
   toggle: (id: ThemeId) => void;
@@ -18,15 +18,15 @@ export type LayerState = {
   setDeportationCount: (n: number) => void;
 
   /** ISO YYYY-MM-DD cutoff for the timeline. null = "show all dates".
-    *  When set, POIs are filtered to those whose `date` property is null
-    *  (always visible) or <= currentDate. Resolution is month-level so
-    *  events appear gradually rather than in a yearly burst. Range
-    *  1933-01..1945-12. */
+   *  When set, POIs are filtered to those whose `date` property is null
+   *  (always visible) or <= currentDate. Resolution is month-level so
+   *  events appear gradually rather than in a yearly burst. Range
+   *  1933-01..1945-12. */
   currentDate: string | null;
   setCurrentDate: (d: string | null) => void;
 
   /** Whether the MapLibre attribution box is expanded. Timeline uses this
-    *  to shift up and avoid overlapping with the open copyright notice. */
+   *  to shift up and avoid overlapping with the open copyright notice. */
   attributionExpanded: boolean;
   setAttributionExpanded: (v: boolean) => void;
 };

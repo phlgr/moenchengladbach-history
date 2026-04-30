@@ -40,9 +40,7 @@ export function DeportationToggle({
           className="mt-1 hidden text-[0.78rem] italic text-faded sm:block"
           style={{ fontFamily: "var(--font-serif)" }}
         >
-          {active
-            ? "Schließt das Netz"
-            : "Wohin sie verschleppt wurden"}
+          {active ? "Schließt das Netz" : "Wohin sie verschleppt wurden"}
         </span>
         {totalRoutes !== null && (
           <span className="akte-meta mt-2 hidden items-center gap-2 text-[0.62rem] sm:flex">
