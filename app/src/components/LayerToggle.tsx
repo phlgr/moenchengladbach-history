@@ -26,7 +26,7 @@ export function LayerToggle({
             } ${
               isActive
                 ? "text-ink"
-                : "text-faded-ink/70 hover:text-ink"
+                : "text-faded/70 hover:text-ink"
             }`}
           >
             <span
@@ -39,7 +39,7 @@ export function LayerToggle({
             />
             <span className="flex-1 font-medium">{t.label}</span>
             {c !== undefined && (
-              <span className="text-[10px] tabular-nums text-faded-ink/80">
+              <span className="text-[10px] tabular-nums text-faded/80">
                 {c}
               </span>
             )}

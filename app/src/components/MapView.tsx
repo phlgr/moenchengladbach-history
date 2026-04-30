@@ -261,7 +261,7 @@ export function MapView() {
         <div ref={containerRef} className="h-full w-full" />
         <div className="pointer-events-none absolute left-4 top-20 z-10 flex w-44 flex-col gap-2">
           {total > 0 && (
-            <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 px-3 py-1 text-[11px] text-faded-ink shadow">
+            <div className="pointer-events-auto rounded border border-sepia-light bg-paper/95 px-3 py-1 text-[11px] text-faded shadow">
               {total} POIs gesamt
             </div>
           )}

@@ -125,7 +125,7 @@ export function Sidebar({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="rounded p-1 text-faded-ink transition-colors hover:bg-sepia-light/40 hover:text-ink"
+          className="rounded p-1 text-faded transition-colors hover:bg-sepia-light/40 hover:text-ink"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -140,7 +140,7 @@ export function Sidebar({
 
       <div className="flex-1 overflow-y-auto">
         {loading && (
-          <div className="px-5 py-10 text-center text-sm text-faded-ink">
+          <div className="px-5 py-10 text-center text-sm text-faded">
             Lade…
           </div>
         )}
@@ -167,7 +167,7 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
         <h1 className="font-serif text-xl font-bold leading-tight text-ink">
           {g.address}
         </h1>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded-ink">
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded">
           <span>
             {g.stones.length === 1
               ? "1 Stolperstein"
@@ -202,7 +202,7 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
                   {s.name}
                 </h2>
                 {s.install_date && (
-                  <div className="mt-0.5 text-[11px] text-faded-ink">
+                  <div className="mt-0.5 text-[11px] text-faded">
                     Verlegt&nbsp;{s.install_date}
                   </div>
                 )}
@@ -217,11 +217,9 @@ function StolpersteinGroupView({ g }: { g: StolpersteinGroup }) {
               </div>
             </div>
             {s.bio && (
-              <div className="mt-3 text-[14px] leading-relaxed text-ink">
+              <div className="article-body mt-3 text-[14px] text-ink">
                 {s.bio.split(/\n+/).map((p, i) => (
-                  <p key={i} className="mb-2 last:mb-0">
-                    {p}
-                  </p>
+                  <p key={i}>{p}</p>
                 ))}
               </div>
             )}
@@ -258,24 +256,22 @@ function BaudenkmalView({ c }: { c: BaudenkmalContent }) {
           {c.bezeichnung || c.name}
         </h1>
         {c.address && (
-          <div className="mt-1 text-sm text-faded-ink">{c.address}</div>
+          <div className="mt-1 text-sm text-faded">{c.address}</div>
         )}
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded-ink">
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-faded">
           {c.ortsteil && <span>{c.ortsteil}</span>}
           {c.build_date && <span>Bauzeit:&nbsp;{c.build_date}</span>}
           {c.nummer && <span>Denkmal-Nr.&nbsp;{c.nummer}</span>}
         </div>
         {c.description && (
-          <div className="mt-5 text-[15px] leading-relaxed text-ink">
+          <div className="article-body mt-5 text-[15px] text-ink">
             {c.description.split(/\n+/).map((p, i) => (
-              <p key={i} className="mb-3 last:mb-0">
-                {p}
-              </p>
+              <p key={i}>{p}</p>
             ))}
           </div>
         )}
         {c.registration_date && (
-          <div className="mt-4 text-xs text-faded-ink">
+          <div className="mt-4 text-xs text-faded">
             Eingetragen seit {c.registration_date}
           </div>
         )}
@@ -287,7 +283,7 @@ function BaudenkmalView({ c }: { c: BaudenkmalContent }) {
 
 function SourceLink({ href }: { href: string }) {
   return (
-    <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded-ink">
+    <div className="mt-6 border-t border-sepia-light pt-4 text-xs text-faded">
       <a
         href={href}
         target="_blank"
