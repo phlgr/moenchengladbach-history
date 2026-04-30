@@ -5,6 +5,15 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+// Self-hosted fonts via Fontsource — bundled by Vite, no third-party
+// requests at runtime. Newsreader is the variable wght+opsz axis;
+// DM Mono is static (no variable build exists).
+import "@fontsource-variable/newsreader/wght.css";
+import "@fontsource-variable/newsreader/wght-italic.css";
+import "@fontsource/dm-mono/300.css";
+import "@fontsource/dm-mono/400.css";
+import "@fontsource/dm-mono/400-italic.css";
+import "@fontsource/dm-mono/500.css";
 import "../styles.css";
 
 export const Route = createRootRoute({
@@ -19,21 +28,6 @@ export const Route = createRootRoute({
           "Interaktive Karte zur Geschichte Mönchengladbachs — Stolpersteine, Baudenkmäler und mehr.",
       },
       { title: "Mönchengladbach History" },
-    ],
-    links: [
-      {
-        rel: "preconnect",
-        href: "https://fonts.googleapis.com",
-      },
-      {
-        rel: "preconnect",
-        href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap",
-      },
     ],
   }),
   component: RootComponent,

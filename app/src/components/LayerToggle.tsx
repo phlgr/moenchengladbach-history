@@ -1,29 +1,64 @@
+import { useState } from "react";
 import { THEMES, type ThemeId, themesByGroup } from "../lib/themes";
 import { useLayerState } from "../lib/layerState";
 
 export function LayerToggle() {
   const { active, counts, toggle, toggleGroup } = useLayerState();
   const groups = themesByGroup();
+  // Collapsed on mobile by default (the body would otherwise eat half
+  // the viewport over the map). On `sm:` and up we ignore this state
+  // and always render the body.
+  const [open, setOpen] = useState(false);
+  const totalActive = (Object.keys(THEMES) as ThemeId[]).filter(
+    (t) => active[t],
+  ).length;
   return (
     <div
-      className="akte-grain akte-reveal pointer-events-auto relative w-56 border border-paper-edge bg-paper-light/95 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm"
+      className="akte-grain akte-reveal pointer-events-auto relative w-full max-w-[224px] border border-paper-edge bg-paper-light/95 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm"
       style={{ animationDelay: "120ms" }}
     >
-      {/* Top index-card binding holes */}
-      <div
-        aria-hidden
-        className="flex items-center justify-around border-b border-paper-edge bg-paper-soft/70 px-4 py-1.5"
+      {/* Index-card binding-hole header strip — also the mobile
+          collapse toggle. On sm+ the chevron hides and the strip
+          becomes presentational again. */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="layer-toggle-body"
+        className="flex w-full items-center justify-between gap-2 border-b border-paper-edge bg-paper-soft/70 px-4 py-1.5 text-left sm:cursor-default"
       >
         <span className="akte-label" style={{ fontSize: "0.52rem" }}>
           Filtern
         </span>
-        <span className="flex gap-3">
-          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
-          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
-          <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+        <span className="flex items-center gap-3">
+          <span className="akte-meta tabular-nums sm:hidden" style={{ fontSize: "0.6rem" }}>
+            {totalActive}/{Object.keys(THEMES).length}
+          </span>
+          <span aria-hidden className="hidden gap-3 sm:flex">
+            <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+            <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+            <span className="block h-1.5 w-1.5 rounded-full bg-paper-edge/80" />
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden
+            className={`h-3 w-3 text-faded transition-transform duration-200 sm:hidden ${
+              open ? "rotate-180" : ""
+            }`}
+          >
+            <path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" />
+          </svg>
         </span>
-      </div>
+      </button>
 
+      <div
+        id="layer-toggle-body"
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out sm:!max-h-none sm:!opacity-100 ${
+          open ? "max-h-[60vh] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
       {groups.map(({ group, themes }, gi) => {
         const total = themes.reduce((n, t) => n + (counts[t] ?? 0), 0);
         const allOn = themes.every((t) => active[t]);
@@ -116,6 +151,7 @@ export function LayerToggle() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

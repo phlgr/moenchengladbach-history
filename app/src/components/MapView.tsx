@@ -7,6 +7,14 @@ import { useLayerState } from "../lib/layerState";
 
 const MG_CENTER: [number, number] = [6.444, 51.196];
 const MG_DEFAULT_ZOOM = 12;
+// Snug bounds around Mönchengladbach for normal browsing — keeps the
+// user from panning into the void. Dropped while deportation mode is
+// active so the cinematic European overview can fit on portrait
+// phones (which need to zoom out far past these bounds).
+const MG_MAX_BOUNDS: [[number, number], [number, number]] = [
+  [4.5, 49],
+  [9, 53],
+];
 
 const ORDERED_THEMES: ThemeId[] = [
   "stolpersteine",
@@ -208,6 +216,7 @@ export function MapView() {
     deportationMode,
     setDeportationCount,
     currentDate,
+    setAttributionExpanded,
   } = useLayerState();
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);
@@ -261,6 +270,7 @@ export function MapView() {
     if (!containerRef.current) return;
     let cancelled = false;
     let mapInstance: MlMap | null = null;
+    let attribObserver: MutationObserver | null = null;
 
     (async () => {
       const [maplibregl, { Protocol }] = await Promise.all([
@@ -277,11 +287,7 @@ export function MapView() {
         style: createMapStyle(),
         center: MG_CENTER,
         zoom: MG_DEFAULT_ZOOM,
-        // Wide max bounds so the cinematic deportation view can fit.
-        maxBounds: [
-          [-2, 44],
-          [32, 60],
-        ],
+        maxBounds: MG_MAX_BOUNDS,
         attributionControl: { compact: true },
       });
       mapInstance = map;
@@ -315,6 +321,15 @@ export function MapView() {
         // Deportation network — sources + layers stay added, opacity
         // animates between 0 and 1 when the user toggles cinematic mode.
         await loadDeportationLayers(map);
+
+        // Watch for attribution box expand/collapse to shift timeline.
+        const attribEl = document.querySelector(".maplibregl-ctrl-attrib");
+        if (attribEl) {
+          attribObserver = new MutationObserver(() => {
+            setAttributionExpanded(!attribEl.classList.contains("maplibregl-compact-show"));
+          });
+          attribObserver.observe(attribEl, { attributes: true, attributeFilter: ["class"] });
+        }
 
         map.on("click", (e) => {
           if (deportationModeRef.current) return;
@@ -615,6 +630,7 @@ export function MapView() {
 
     return () => {
       cancelled = true;
+      attribObserver?.disconnect();
       if (recentTickerRef.current != null) {
         clearInterval(recentTickerRef.current);
         recentTickerRef.current = null;
@@ -917,15 +933,24 @@ export function MapView() {
     if (deportationMode) {
       // Close any open sidebar first
       setSelection(null);
+      // Drop the snug MG max-bounds — portrait phones need to zoom out
+      // past them to fit the European cinematic frame.
+      map.setMaxBounds(undefined);
       // Pan to a wide bounds covering MG + all destinations.
-      // Padded so the lines have breathing room.
+      // Padded so the lines have breathing room. On narrow viewports
+      // the left padding (which makes room for the desktop sidebar)
+      // would crush the frame, so collapse it.
+      const narrow =
+        typeof window !== "undefined" && window.innerWidth < 640;
       map.fitBounds(
         [
           [3.5, 47.8],
           [27.5, 57.8],
         ],
         {
-          padding: { top: 80, bottom: 80, left: 320, right: 80 },
+          padding: narrow
+            ? { top: 24, bottom: 24, left: 16, right: 16 }
+            : { top: 80, bottom: 80, left: 320, right: 80 },
           duration: 1500,
           essential: true,
         },
@@ -1014,9 +1039,17 @@ export function MapView() {
         duration: 1500,
         essential: true,
       });
+      // Restore the snug MG bounds once we're back near the city.
+      // Doing it after the flyTo finishes avoids fighting the
+      // animation; setting it immediately would clamp the in-flight
+      // camera. 1500ms matches flyTo's duration.
+      const restore = setTimeout(() => {
+        if (!cancelled) map.setMaxBounds(MG_MAX_BOUNDS);
+      }, 1600);
 
       return () => {
         cancelled = true;
+        clearTimeout(restore);
         if (raf) cancelAnimationFrame(raf);
       };
     }

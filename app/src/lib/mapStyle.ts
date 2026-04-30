@@ -2,18 +2,23 @@ import type { StyleSpecification } from "maplibre-gl";
 import { layersWithPartialCustomTheme } from "protomaps-themes-base";
 
 /**
- * Public Protomaps planet PMTiles. Served as a single 135 GB file behind
- * an HTTP range-request CDN — the `pmtiles` library fetches only the
- * directory + the bytes for the tiles currently in view, so total network
- * use stays modest.
+ * PMTiles archive — served from the app's own public directory so the
+ * map has no third-party runtime dependency. Built by
+ *   scripts/build_pmtiles.sh
+ * which extracts a tight MG city archive at z=8..14 and a wide Europe
+ * overview at z=0..7, then merges them into a single ~38 MB archive.
+ * One file is enough because z<8 covers the deportation cinematic
+ * frame and z>=8 covers city detail; the two zoom ranges are disjoint
+ * so `pmtiles merge` can stitch them without overlap conflicts.
  *
- * Swap to a self-hosted regional extract for production:
- *   pmtiles extract https://demo-bucket.protomaps.com/v4.pmtiles \
- *     app/public/moenchengladbach.pmtiles \
- *     --bbox=6.3,51.1,6.6,51.3 --maxzoom=15
- * then change PMTILES_URL to "/moenchengladbach.pmtiles".
+ * Override with VITE_PMTILES_URL (e.g. a CDN copy or the protomaps
+ * demo bucket if you haven't run the extract yet).
  */
-const PMTILES_URL = "https://demo-bucket.protomaps.com/v4.pmtiles";
+type ImportMetaEnv = {
+  VITE_PMTILES_URL?: string;
+};
+const env = (import.meta as { env?: ImportMetaEnv }).env ?? {};
+const PMTILES_URL = env.VITE_PMTILES_URL ?? "/map-assets/basemap.pmtiles";
 
 const archivalTheme = {
   background: "#FAF8F5",
@@ -110,17 +115,17 @@ const archivalTheme = {
 export function createMapStyle(): StyleSpecification {
   return {
     version: 8,
-    sprite: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
-    glyphs:
-      "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+    sprite: "/map-assets/sprites/v4/light",
+    glyphs: "/map-assets/fonts/{fontstack}/{range}.pbf",
     sources: {
       protomaps: {
         type: "vector",
         url: `pmtiles://${PMTILES_URL}`,
         attribution: [
           'Karte © <a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a>',
-          '© <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+          '© <a href="https://openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> / Overpass',
           'Inhalte © <a href="https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_M%C3%B6nchengladbach" target="_blank" rel="noreferrer">Wikipedia</a> (CC&nbsp;BY-SA&nbsp;4.0)',
+          'NS-Personen: <a href="https://www.wikidata.org" target="_blank" rel="noreferrer">Wikidata</a>',
         ].join(" · "),
       },
     },

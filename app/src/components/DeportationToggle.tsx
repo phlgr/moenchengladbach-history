@@ -12,7 +12,7 @@ export function DeportationToggle({
       type="button"
       onClick={onToggle}
       aria-pressed={active}
-      className={`akte-grain pointer-events-auto group relative flex w-56 flex-col items-stretch border bg-paper-light/95 text-left shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm transition-colors ${
+      className={`akte-grain pointer-events-auto group relative flex w-full max-w-[224px] flex-col items-stretch border bg-paper-light/95 text-left shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm transition-colors ${
         active
           ? "border-red-oxide bg-paper-light"
           : "border-paper-edge hover:border-sepia"
@@ -27,7 +27,7 @@ export function DeportationToggle({
         </span>
         <DeportationGlyph active={active} />
       </span>
-      <span className="px-4 py-3">
+      <span className="px-4 py-2.5 sm:py-3">
         <span
           className="block akte-display"
           style={{ fontSize: "1.05rem", lineHeight: 1.15, fontWeight: 500 }}
@@ -35,7 +35,7 @@ export function DeportationToggle({
           {active ? "Zurück zur Karte" : "Deportationsnetz"}
         </span>
         <span
-          className="mt-1 block text-[0.78rem] italic text-faded"
+          className="mt-1 hidden text-[0.78rem] italic text-faded sm:block"
           style={{ fontFamily: "var(--font-serif)" }}
         >
           {active
@@ -43,7 +43,7 @@ export function DeportationToggle({
             : "Wohin sie verschleppt wurden"}
         </span>
         {totalRoutes !== null && (
-          <span className="akte-meta mt-2 flex items-center gap-2 text-[0.62rem]">
+          <span className="akte-meta mt-2 hidden items-center gap-2 text-[0.62rem] sm:flex">
             <span className="tabular-nums">{totalRoutes}</span>
             <span>Routen</span>
             <span className="h-px flex-1 bg-paper-edge/60" />

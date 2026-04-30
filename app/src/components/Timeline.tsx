@@ -41,9 +41,16 @@ function formatLong(iso: string): string {
 }
 
 export function Timeline() {
-  const { currentDate, setCurrentDate } = useLayerState();
+  const { currentDate, setCurrentDate, attributionExpanded } = useLayerState();
   const [playing, setPlaying] = useState(false);
   const reduceMotion = useReducedMotion();
+
+  // When the user opens the attribution box it grows tall enough to
+  // bump into the timeline; lift the timeline out of the way until
+  // they close it again.
+  const bottomOffset = attributionExpanded
+    ? "bottom-[280px]"
+    : "sm:bottom-14";
 
   const idx = dateToMonthIndex(currentDate);
 
@@ -106,7 +113,7 @@ export function Timeline() {
   }
 
   return (
-    <div className="pointer-events-auto absolute bottom-6 left-1/2 z-10 w-[min(680px,calc(100%-3rem))] -translate-x-1/2">
+    <div className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-3rem))] -translate-x-1/2`}>
       <div className="akte-grain akte-reveal relative flex items-stretch gap-3 border border-paper-edge bg-paper-light/95 px-4 py-2.5 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
         <button
           type="button"
