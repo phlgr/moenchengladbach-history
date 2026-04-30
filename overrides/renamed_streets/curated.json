@@ -1,5 +1,5 @@
 {
-  "_doc": "Streets and squares in Mönchengladbach that were renamed during the NS-era (1933–1945) and reverted after liberation. Each entry pins to the current location and lists the NS-era name + canonical Wikipedia source. Verified entries come from the Wikipedia article 'Adolf Hitler als Namensgeber von Straßen und Plätzen', which cites a 2009 RP-Online research article ('Wie die Stadt braun wurde'). More entries to be added as the local research project widens.",
+  "_doc": "Streets and squares in Mönchengladbach that bore an NS-ideology name (1933–1945) and were renamed back / to a different post-war name. Verified from: (1) Wikipedia 'Adolf Hitler als Namensgeber von Straßen und Plätzen' citing the RP-Online 2009 research piece 'Wie die Stadt braun wurde', and (2) cross-references in the Stolpersteine MG Wikipedia pages where the Stadtarchiv PDF source files document 'ehemals X' annotations next to a current address.",
   "entries": [
     {
       "id": "renamed-richard-wagner-strasse",
@@ -26,6 +26,32 @@
       "description": "Heutiger Marktplatz Rheydt. Während der NS-Zeit von 1933 bis 1945 in 'Adolf-Hitler-Platz' umbenannt; symbolische Bedeutung als Hauptplatz von Goebbels' Geburtsstadt Rheydt. Nach der Befreiung 1945 zurückbenannt. Quelle: Wikipedia/RP-Online ('Wie die Stadt braun wurde', 2009).",
       "source": "wp-curated",
       "source_url": "https://de.wikipedia.org/wiki/Adolf_Hitler_als_Namensgeber_von_Stra%C3%9Fen_und_Pl%C3%A4tzen"
+    },
+    {
+      "id": "renamed-friedrich-ebert-strasse",
+      "name": "Friedrich-Ebert-Straße",
+      "category": "renamed_street",
+      "lat": 51.17542,
+      "lng": 6.43921,
+      "address": "Friedrich-Ebert-Straße, Rheydt",
+      "ns_name": "Horst-Wessel-Straße",
+      "ns_period": "1933–1945",
+      "description": "Heutige Friedrich-Ebert-Straße in Rheydt; während der NS-Zeit nach dem SA-Mann und NS-Liedautor Horst Wessel benannt. Die Stolpersteine-Akte des Stadtarchivs Mönchengladbach für die Hausnummer 264 (jüdisches Ehepaar Levy) verweist explizit auf 'ehemals Horst-Wessel-Straße 264'. Nach der Befreiung 1945 zurückbenannt nach dem ersten Reichspräsidenten der Weimarer Republik.",
+      "source": "wp-curated",
+      "source_url": "https://www.moenchengladbach.de/fileadmin/user_upload/Stadtarchiv-Stadtgeschichte/Stolpersteine/Friedrich-Ebert-Stra%C3%9Fe.pdf"
+    },
+    {
+      "id": "renamed-albertusstrasse",
+      "name": "Albertusstraße",
+      "category": "renamed_street",
+      "lat": 51.19668,
+      "lng": 6.43888,
+      "address": "Albertusstraße, Mönchengladbach (Stadtmitte)",
+      "ns_name": "Ludendorffstraße",
+      "ns_period": "1933–1945",
+      "description": "Heutige Albertusstraße in der Stadtmitte; während der NS-Zeit nach dem WW1-General und späteren NSDAP-Putschisten Erich Ludendorff benannt. Die Stadtarchiv-Akte zur Hausnummer 37 (Fotoatelier der Jüdinnen Elise Haas und Grete Bermbach, 1938 als 'jüdisches Geschäft' gekennzeichnet, in der Pogromnacht beschädigt) verweist auf 'ehemals Ludendorffstraße'. Nach 1945 zurückbenannt.",
+      "source": "wp-curated",
+      "source_url": "https://www.moenchengladbach.de/fileadmin/user_upload/Stadtarchiv-Stadtgeschichte/Stolpersteine/Kaiserstra%C3%9Fe_49.pdf"
     }
   ]
 }

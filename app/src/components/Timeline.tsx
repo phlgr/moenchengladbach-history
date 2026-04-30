@@ -30,6 +30,9 @@ export function Timeline() {
       if (y > END) {
         clearInterval(tick);
         setPlaying(false);
+        // Hold the final year for a beat, then return to "Alle" so the
+        // clustering re-engages and the user sees the full picture again.
+        setTimeout(() => setCurrentYear(null), 1600);
         return;
       }
       setCurrentYear(y);
