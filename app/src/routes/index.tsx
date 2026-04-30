@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapView } from "../components/MapView";
 import { LayerToggle } from "../components/LayerToggle";
+import { DeportationToggle } from "../components/DeportationToggle";
 import { LayerStateContext } from "../lib/layerState";
 import { THEMES, type ThemeId } from "../lib/themes";
 
@@ -19,6 +20,10 @@ function HomePage() {
     return a;
   });
   const [counts, setCounts] = useState<Partial<Record<ThemeId, number>>>({});
+  const [deportationMode, setDeportationMode] = useState(false);
+  const [deportationCount, setDeportationCount] = useState<number | null>(
+    null,
+  );
 
   const toggle = useCallback(
     (id: ThemeId) => setActive((a) => ({ ...a, [id]: !a[id] })),
@@ -40,12 +45,21 @@ function HomePage() {
 
   return (
     <LayerStateContext.Provider
-      value={{ active, counts, toggle, toggleGroup, setCount }}
+      value={{
+        active,
+        counts,
+        toggle,
+        toggleGroup,
+        setCount,
+        deportationMode,
+        setDeportationMode,
+        deportationCount,
+        setDeportationCount,
+      }}
     >
       <main className="relative h-screen w-screen overflow-hidden">
         <header className="pointer-events-none absolute left-0 top-0 z-10 flex w-fit max-w-[280px] flex-col gap-2 p-5">
           <div className="akte-grain akte-reveal pointer-events-auto relative flex flex-col gap-2 border border-paper-edge bg-paper-light/95 px-5 pb-3 pt-3 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
-            {/* Folder-tab corner accent */}
             <div
               aria-hidden
               className="absolute -right-px -top-px h-3 w-10 origin-top-right border-l border-paper-edge bg-paper-soft"
@@ -67,6 +81,11 @@ function HomePage() {
             <div className="akte-meta pt-0.5 text-[0.62rem]">1933 — 1945</div>
           </div>
           <LayerToggle />
+          <DeportationToggle
+            active={deportationMode}
+            onToggle={() => setDeportationMode(!deportationMode)}
+            totalRoutes={deportationCount}
+          />
         </header>
         <MapView />
       </main>

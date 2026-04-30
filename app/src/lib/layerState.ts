@@ -7,6 +7,15 @@ export type LayerState = {
   toggle: (id: ThemeId) => void;
   toggleGroup: (group: string, allOn: boolean) => void;
   setCount: (id: ThemeId, n: number) => void;
+
+  /** Cinematic deportation-network mode: dims POI markers, draws arcs
+   *  from each Stolperstein origin to its deportation destination, and
+   *  zooms the camera out to fit MG + Eastern Europe. */
+  deportationMode: boolean;
+  setDeportationMode: (v: boolean) => void;
+  /** Total deportation routes (filled once the data is loaded). */
+  deportationCount: number | null;
+  setDeportationCount: (n: number) => void;
 };
 
 export const LayerStateContext = createContext<LayerState | null>(null);
