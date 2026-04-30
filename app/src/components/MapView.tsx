@@ -91,32 +91,52 @@ function featureKey(f: GeoJSON.Feature): string {
   return JSON.stringify(f.geometry);
 }
 
-// Re-feed a theme's cumulative source with the visible feature set,
-// merging `_fade` values from the in-flight life-map. The cumulative
-// source's `clusterProperties` then aggregates `_fade_max` per
-// cluster, so the recent ring lights up the cluster bubble itself
-// rather than the original lat/lng of each member.
-function paintCumulativeWithFades(
+// Re-feed both sources for a theme:
+//   1. cumulative `${theme}` — same visible features as before, but
+//      with `_fade` merged onto features that are currently fading.
+//      The source's `clusterProperties._fade_max` aggregate then
+//      drives the cluster-bubble ring (so clustered features get a
+//      ring on the cluster, not on each member's original lat/lng).
+//   2. `${theme}-recent` — only the currently-fading individual
+//      features, with `_fade`. Drives the per-point ring at high
+//      zoom (where features are un-clustered).
+function paintRecentLife(
   map: MlMap,
   theme: string,
-  features: GeoJSON.Feature[],
+  cumulative: GeoJSON.Feature[],
   life: Map<string, RecentLifeFeature>,
 ) {
-  const src = map.getSource(theme) as GeoJSONSource | undefined;
-  if (!src) return;
-  const out: GeoJSON.Feature[] = features.map((f) => {
-    const id = featureKey(f);
-    const entry = life.get(id);
-    if (!entry || entry.fade <= 0) return f;
-    return {
-      ...f,
-      properties: {
-        ...(f.properties ?? {}),
-        _fade: entry.fade,
-      },
-    };
-  });
-  src.setData({ type: "FeatureCollection", features: out });
+  const cumSrc = map.getSource(theme) as GeoJSONSource | undefined;
+  if (cumSrc) {
+    const out: GeoJSON.Feature[] = cumulative.map((f) => {
+      const id = featureKey(f);
+      const entry = life.get(id);
+      if (!entry || entry.fade <= 0) return f;
+      return {
+        ...f,
+        properties: { ...(f.properties ?? {}), _fade: entry.fade },
+      };
+    });
+    cumSrc.setData({ type: "FeatureCollection", features: out });
+  }
+
+  const recentSrc = map.getSource(`${theme}-recent`) as
+    | GeoJSONSource
+    | undefined;
+  if (recentSrc) {
+    const recent: GeoJSON.Feature[] = [];
+    for (const entry of life.values()) {
+      if (entry.fade <= 0) continue;
+      recent.push({
+        ...entry.feature,
+        properties: {
+          ...(entry.feature.properties ?? {}),
+          _fade: entry.fade,
+        },
+      });
+    }
+    recentSrc.setData({ type: "FeatureCollection", features: recent });
+  }
 }
 
 // Run the life manager interval. Each tick advances `fade` for every
@@ -141,7 +161,7 @@ function ensureRecentTicker(
         if (entry.phase === "in") entry.phase = "hold";
       }
       const cumulative = cumulativeRef.current[theme] ?? [];
-      paintCumulativeWithFades(map, theme, cumulative, life);
+      paintRecentLife(map, theme, cumulative, life);
     }
     return;
   }
@@ -168,7 +188,7 @@ function ensureRecentTicker(
       }
       if (mutated) {
         const cumulative = cumulativeRef.current[theme] ?? [];
-        paintCumulativeWithFades(map, theme, cumulative, life);
+        paintRecentLife(map, theme, cumulative, life);
       }
       if (life.size > 0) anyAlive = true;
     }
@@ -227,6 +247,8 @@ export function MapView() {
         `${theme}-points-selected`,
         `${theme}-recent-halo`,
         `${theme}-recent-ring`,
+        `${theme}-cluster-fade-halo`,
+        `${theme}-cluster-fade-ring`,
       ]) {
         if (map.getLayer(lid)) {
           map.setLayoutProperty(lid, "visibility", visible);
@@ -468,57 +490,124 @@ export function MapView() {
         addRecentOverlay(map, theme);
       }
 
-      // Per-theme "new in this month" overlay. Reads from the same
-      // source as the cluster/point layers so the ring lights up at
-      // whatever spot the feature is currently rendered — the cluster
-      // bubble at low zoom, the individual point at high zoom. The
-      // `_fade` is set per-feature and aggregated as `_fade_max` on
-      // clusters via clusterProperties on the source.
+      // Per-theme "new in this month" overlay. Two pairs of layers:
+      //   - `${theme}-recent-halo`/`-ring` read from the separate
+      //     `${theme}-recent` source and render the per-feature ring
+      //     at each in-flight feature's lat/lng. This source is small
+      //     (just whatever's fading) and visible at every zoom.
+      //   - `${theme}-cluster-fade-halo`/`-ring` read from the
+      //     cumulative `${theme}` source (filtered to clusters) and
+      //     light up the cluster bubble itself when any of its
+      //     members are still fading, so the ring sits on the
+      //     cluster, not on each member's original lat/lng.
       function addRecentOverlay(map: MlMap, theme: ThemeId) {
         const colors = THEMES[theme];
-        const opacityFade: any = [
-          "case",
-          ["has", "point_count"],
-          ["coalesce", ["get", "_fade_max"], 0],
-          ["coalesce", ["get", "_fade"], 0],
-        ];
-        const haloRadius: any = [
-          "case",
-          ["has", "point_count"],
-          // For clusters, hug the cluster bubble (point_count steps
-          // mirror the `${theme}-clusters` layer's circle-radius) plus
-          // a halo offset.
-          ["step", ["get", "point_count"], 21, 10, 25, 50, 30],
-          ["interpolate", ["linear"], ["zoom"], 10, 14, 14, 22],
-        ];
-        const ringRadius: any = [
-          "case",
-          ["has", "point_count"],
-          ["step", ["get", "point_count"], 16, 10, 20, 50, 25],
-          ["interpolate", ["linear"], ["zoom"], 10, 7, 14, 11],
-        ];
 
+        const sourceId = `${theme}-recent`;
+        if (!map.getSource(sourceId)) {
+          map.addSource(sourceId, {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+          });
+        }
+
+        // Per-feature individual ring + halo.
         map.addLayer({
           id: `${theme}-recent-halo`,
           type: "circle",
-          source: theme,
+          source: sourceId,
           paint: {
             "circle-color": colors.pointColor,
-            "circle-opacity": ["*", HALO_MAX_OPACITY, opacityFade] as any,
+            "circle-opacity": [
+              "*",
+              HALO_MAX_OPACITY,
+              ["coalesce", ["get", "_fade"], 0],
+            ] as any,
             "circle-blur": 0.6,
-            "circle-radius": haloRadius,
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              10,
+              14,
+              14,
+              22,
+            ],
           },
         });
         map.addLayer({
           id: `${theme}-recent-ring`,
           type: "circle",
-          source: theme,
+          source: sourceId,
           paint: {
             "circle-color": "transparent",
             "circle-stroke-color": "#8a1f0e",
             "circle-stroke-width": 1.6,
-            "circle-stroke-opacity": opacityFade,
-            "circle-radius": ringRadius,
+            "circle-stroke-opacity": [
+              "coalesce",
+              ["get", "_fade"],
+              0,
+            ] as any,
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              10,
+              7,
+              14,
+              11,
+            ],
+          },
+        });
+
+        // Cluster-bubble ring + halo, driven by `_fade_max` aggregate.
+        map.addLayer({
+          id: `${theme}-cluster-fade-halo`,
+          type: "circle",
+          source: theme,
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-color": colors.pointColor,
+            "circle-opacity": [
+              "*",
+              HALO_MAX_OPACITY,
+              ["coalesce", ["get", "_fade_max"], 0],
+            ] as any,
+            "circle-blur": 0.6,
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              21,
+              10,
+              25,
+              50,
+              30,
+            ],
+          },
+        });
+        map.addLayer({
+          id: `${theme}-cluster-fade-ring`,
+          type: "circle",
+          source: theme,
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-color": "transparent",
+            "circle-stroke-color": "#8a1f0e",
+            "circle-stroke-width": 1.6,
+            "circle-stroke-opacity": [
+              "coalesce",
+              ["get", "_fade_max"],
+              0,
+            ] as any,
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              16,
+              10,
+              20,
+              50,
+              25,
+            ],
           },
         });
       }
@@ -563,10 +652,7 @@ export function MapView() {
             // bubble lights up while any of its features are still
             // fading.
             clusterProperties: {
-              _fade_max: [
-                ["max", ["accumulated"], ["get", "_fade_max"]],
-                ["coalesce", ["get", "_fade"], 0],
-              ],
+              _fade_max: ["max", ["coalesce", ["get", "_fade"], 0]],
             },
           }
         : { cluster: false }),
@@ -789,7 +875,7 @@ export function MapView() {
       }
 
       cumulativeRef.current[theme] = cumulativeFeatures;
-      paintCumulativeWithFades(map, theme, cumulativeFeatures, life);
+      paintRecentLife(map, theme, cumulativeFeatures, life);
     }
 
     ensureRecentTicker(
