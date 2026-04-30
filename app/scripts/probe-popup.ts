@@ -42,12 +42,15 @@ const result = await page.evaluate(async () => {
 
 await page.waitForTimeout(2500);
 
-const popup = await page.evaluate(() => {
-  const p = document.querySelector(".maplibregl-popup");
-  if (!p) return null;
+const sidebar = await page.evaluate(() => {
+  const a = document.querySelector("aside");
+  if (!a) return null;
+  const rect = a.getBoundingClientRect();
   return {
-    text: (p as HTMLElement).innerText.slice(0, 300),
-    hasImg: !!p.querySelector("img"),
+    visible: rect.right <= window.innerWidth + 10 && rect.left < window.innerWidth,
+    rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
+    text: (a as HTMLElement).innerText.slice(0, 300),
+    hasImg: !!a.querySelector("img"),
   };
 });
 
@@ -56,4 +59,4 @@ await browser.close();
 
 console.log("result:", result);
 console.log("errors:", errors);
-console.log("popup:", popup);
+console.log("sidebar:", sidebar);
