@@ -185,6 +185,37 @@ def collect_ns_osm() -> list[dict]:
     return json.loads(src_path.read_text())
 
 
+# Administrative-only WP titles that the narrative scanner may pull in
+# but which would just dump a marker on a district centroid. We have
+# more specific entries elsewhere or the content is too generic.
+NARRATIVE_BLOCKLIST: set[str] = {
+    "Mönchengladbach",
+    "Rheydt",
+    "Lürrip",
+    "Broich (Mönchengladbach)",
+    "Wickrath",
+    "Wickrathberg",
+    "Wanlo",
+    "Hehn (Mönchengladbach)",
+    "Venn (Mönchengladbach)",
+    "Rheindahlen",
+    "Odenkirchen",
+    "Westend (Mönchengladbach)",
+}
+
+
+def collect_ns_narrative() -> list[dict]:
+    src_path = RAW / "ns_orte_narrative.json"
+    if not src_path.exists():
+        return []
+    out: list[dict] = []
+    for e in json.loads(src_path.read_text()):
+        if e.get("name") in NARRATIVE_BLOCKLIST:
+            continue
+        out.append(e)
+    return out
+
+
 def collect_ns_curated() -> list[dict]:
     src_path = OVERRIDES / "ns_orte" / "curated.json"
     if not src_path.exists():
@@ -203,6 +234,7 @@ CATEGORY_TO_SUBLAYER: dict[str, str] = {
     "forced_labor": "ns-zwangsarbeit",
     "pow_camp_memorial": "ns-zwangsarbeit",
     "concentration_camp": "ns-zwangsarbeit",
+    "aryanization": "ns-taeter",
     "perpetrator_site": "ns-taeter",
     "ns_victim_memorial": "ns-gedenkorte",
     "ns_memorial": "ns-gedenkorte",
@@ -225,6 +257,7 @@ def build_ns_orte() -> dict[str, int]:
     all_entries.extend(collect_ns_curated())
     all_entries.extend(collect_ns_baudenkmaeler())
     all_entries.extend(collect_ns_osm())
+    all_entries.extend(collect_ns_narrative())
 
     # de-dupe by spatial proximity within 25 m AND same category, priority
     # curated > baudenkmal > osm (insertion order).
