@@ -169,6 +169,7 @@ export function Timeline() {
           <MonthScale
             current={idx}
             onJump={jumpToMonth}
+            onTogglePlay={togglePlay}
             playing={playing}
             reduceMotion={reduceMotion}
           />
@@ -194,11 +195,13 @@ export function Timeline() {
 function MonthScale({
   current,
   onJump,
+  onTogglePlay,
   playing,
   reduceMotion,
 }: {
   current: number | null;
   onJump: (i: number) => void;
+  onTogglePlay: () => void;
   playing: boolean;
   reduceMotion: boolean;
 }) {
@@ -211,6 +214,34 @@ function MonthScale({
     : playing
       ? "left 90ms linear, width 90ms linear"
       : "left 220ms cubic-bezier(0.2, 0.7, 0.3, 1), width 220ms cubic-bezier(0.2, 0.7, 0.3, 1)";
+  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const cur = current ?? 0;
+    let next: number | null = null;
+    switch (e.key) {
+      case "ArrowLeft":
+        next = Math.max(0, cur - (e.shiftKey ? 12 : 1));
+        break;
+      case "ArrowRight":
+        next = Math.min(TOTAL_MONTHS - 1, cur + (e.shiftKey ? 12 : 1));
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = TOTAL_MONTHS - 1;
+        break;
+      case " ":
+      case "Spacebar":
+        onTogglePlay();
+        e.preventDefault();
+        return;
+      default:
+        return;
+    }
+    if (next !== cur) onJump(next);
+    e.preventDefault();
+  }
+
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const target = e.currentTarget;
     target.setPointerCapture(e.pointerId);
@@ -232,13 +263,17 @@ function MonthScale({
 
   return (
     <div
-      className="relative mt-1.5 h-9 cursor-pointer touch-none"
+      className="relative mt-1.5 h-9 cursor-pointer touch-none focus:outline-none focus-visible:ring-1 focus-visible:ring-sepia"
       onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
       role="slider"
       aria-label="Zeitstrahl"
       aria-valuemin={0}
       aria-valuemax={TOTAL_MONTHS - 1}
       aria-valuenow={current ?? 0}
+      aria-valuetext={
+        current === null ? "Alle Jahre" : formatLong(monthIndexToDate(current))
+      }
       tabIndex={0}
     >
       <div
