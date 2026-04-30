@@ -58,7 +58,7 @@ export function MapView() {
     setCount,
     deportationMode,
     setDeportationCount,
-    currentYear,
+    currentDate,
   } = useLayerState();
   const [selection, setSelection] = useState<SidebarSelection>(null);
   const selectionRef = useRef<SidebarSelection>(null);
@@ -85,6 +85,8 @@ export function MapView() {
         `${theme}-cluster-count`,
         `${theme}-points`,
         `${theme}-points-selected`,
+        `${theme}-recent-halo`,
+        `${theme}-recent-ring`,
       ]) {
         if (map.getLayer(lid)) {
           map.setLayoutProperty(lid, "visibility", visible);
@@ -322,8 +324,60 @@ export function MapView() {
         theme: ThemeId,
         fc: GeoJSON.FeatureCollection,
       ) {
-        // Click handlers + cursor states are attached inside the helper.
         addThemeSourceAndLayers(map, theme, fc, true);
+        addRecentOverlay(map, theme);
+      }
+
+      // Per-theme "new in this month" overlay source + layer. Empty
+      // until the timeline updates it via setData.
+      function addRecentOverlay(map: MlMap, theme: ThemeId) {
+        const colors = THEMES[theme];
+        const sourceId = `${theme}-recent`;
+        if (map.getSource(sourceId)) return;
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        // Soft halo
+        map.addLayer({
+          id: `${theme}-recent-halo`,
+          type: "circle",
+          source: sourceId,
+          paint: {
+            "circle-color": colors.pointColor,
+            "circle-opacity": 0.18,
+            "circle-blur": 0.6,
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              10,
+              14,
+              14,
+              22,
+            ],
+          },
+        });
+        // Bright ring stroke marking newly arrived features
+        map.addLayer({
+          id: `${theme}-recent-ring`,
+          type: "circle",
+          source: sourceId,
+          paint: {
+            "circle-color": "transparent",
+            "circle-stroke-color": "#8a1f0e",
+            "circle-stroke-width": 1.6,
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              10,
+              7,
+              14,
+              11,
+            ],
+          },
+        });
       }
     })();
 
@@ -483,74 +537,57 @@ export function MapView() {
     }
   }
 
-  // Year filter — re-feed each theme's source with the subset of features
-  // whose `year` is null (always visible) or <= currentYear. Done by
-  // mutating the source data because clustering is computed from the
-  // source data, not from a layer filter.
-  //
-  // When the timeline becomes engaged (currentYear !== null), we also
-  // *recreate* each source as non-clustered so individual markers
-  // appear across the city instead of cluster bubbles — the timeline
-  // animation feels much more visceral when each address pops in
-  // separately as its year arrives. On exit, sources are re-clustered.
-  const clusteredRef = useRef(true);
+  // Date filter — re-feed each theme's source with the subset of
+  // features whose `date` is null (always visible) or <= currentDate.
+  // Plus a SECOND auxiliary source per theme (`<theme>-recent`) that
+  // contains only the features that arrived in the same month as
+  // currentDate. The overlay renders those as a bigger non-clustered
+  // ring + halo so the user sees what just happened on top of the
+  // cumulative cluster view.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    const wantCluster = currentYear === null;
 
-    function filterFC(fc: GeoJSON.FeatureCollection): GeoJSON.FeatureCollection {
-      if (currentYear === null) return fc;
-      return {
-        type: "FeatureCollection",
-        features: fc.features.filter((f) => {
-          const y = (f.properties as Record<string, unknown> | null)?.["year"];
-          return y == null || (typeof y === "number" && y <= currentYear);
-        }),
-      };
+    function inSameMonth(d: string | null | undefined, ref: string): boolean {
+      if (!d) return false;
+      return d.slice(0, 7) === ref.slice(0, 7);
     }
 
-    if (wantCluster === clusteredRef.current) {
-      // Same cluster mode — just update data on existing sources.
-      for (const theme of ORDERED_THEMES) {
-        const original = sourceDataRef.current[theme];
-        if (!original) continue;
-        const src = map.getSource(theme) as GeoJSONSource | undefined;
-        if (src) src.setData(filterFC(original));
-      }
-      return;
-    }
-
-    // Cluster mode change: tear down + rebuild every theme's source +
-    // layers. Carry over the active state so visibility stays correct.
     for (const theme of ORDERED_THEMES) {
       const original = sourceDataRef.current[theme];
       if (!original) continue;
-      for (const lid of [
-        `${theme}-clusters`,
-        `${theme}-cluster-count`,
-        `${theme}-points`,
-        `${theme}-points-selected`,
-      ]) {
-        if (map.getLayer(lid)) map.removeLayer(lid);
-      }
-      if (map.getSource(theme)) map.removeSource(theme);
-      addThemeSourceAndLayers(map, theme, filterFC(original), wantCluster);
-      const visible = active[theme] ? "visible" : "none";
-      for (const lid of [
-        `${theme}-clusters`,
-        `${theme}-cluster-count`,
-        `${theme}-points`,
-        `${theme}-points-selected`,
-      ]) {
-        if (map.getLayer(lid)) {
-          map.setLayoutProperty(lid, "visibility", visible);
+
+      let cumulative: GeoJSON.FeatureCollection;
+      let recent: GeoJSON.FeatureCollection;
+      if (currentDate === null) {
+        cumulative = original;
+        recent = { type: "FeatureCollection", features: [] };
+      } else {
+        const cumFeatures: GeoJSON.Feature[] = [];
+        const recentFeatures: GeoJSON.Feature[] = [];
+        for (const f of original.features) {
+          const d = (f.properties as Record<string, unknown> | null)?.["date"];
+          const ds = typeof d === "string" ? d : null;
+          if (ds == null) {
+            cumFeatures.push(f);
+            continue;
+          }
+          if (ds <= currentDate) {
+            cumFeatures.push(f);
+            if (inSameMonth(ds, currentDate)) recentFeatures.push(f);
+          }
         }
+        cumulative = { type: "FeatureCollection", features: cumFeatures };
+        recent = { type: "FeatureCollection", features: recentFeatures };
       }
+      const cumSrc = map.getSource(theme) as GeoJSONSource | undefined;
+      if (cumSrc) cumSrc.setData(cumulative);
+      const recentSrc = map.getSource(`${theme}-recent`) as
+        | GeoJSONSource
+        | undefined;
+      if (recentSrc) recentSrc.setData(recent);
     }
-    clusteredRef.current = wantCluster;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentYear]);
+  }, [currentDate]);
 
   // Cinematic deportation-mode transition
   useEffect(() => {

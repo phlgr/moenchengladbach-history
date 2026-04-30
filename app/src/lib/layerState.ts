@@ -17,11 +17,13 @@ export type LayerState = {
   deportationCount: number | null;
   setDeportationCount: (n: number) => void;
 
-  /** Year cutoff for the timeline. null = "show all years". When set,
-   *  POIs are filtered to those whose `year` property is null (always
-   *  visible) or <= currentYear. Range 1933..1945. */
-  currentYear: number | null;
-  setCurrentYear: (y: number | null) => void;
+  /** ISO YYYY-MM-DD cutoff for the timeline. null = "show all dates".
+   *  When set, POIs are filtered to those whose `date` property is null
+   *  (always visible) or <= currentDate. Resolution is month-level so
+   *  events appear gradually rather than in a yearly burst. Range
+   *  1933-01..1945-12. */
+  currentDate: string | null;
+  setCurrentDate: (d: string | null) => void;
 };
 
 export const LayerStateContext = createContext<LayerState | null>(null);

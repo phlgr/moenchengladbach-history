@@ -45,38 +45,63 @@ def slugify(s: str) -> str:
     return s.strip("-") or "x"
 
 
-# Year-of-persecution extraction. Each Stolperstein inscription almost
-# always contains a year next to the verb of persecution (Deportiert
-# 1942, Verhaftet 1938, Flucht 1938, Ermordet 1944, …). The earliest of
-# those is the year the person's life was decisively touched by the NS
-# state — used by the time-slider so victims appear on the map as their
-# persecution begins.
-PERSECUTION_YEAR_PATTERNS = [
-    re.compile(r"(?:Verhaftet|verhaftet)\s+(19[34][0-9])"),
-    re.compile(r"(?:Flucht|geflohen|emigriert)\s+(?:im\s+Jahr\s+)?(19[34][0-9])"),
-    re.compile(r"(?:Deportiert|deportiert|verschleppt)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
-    re.compile(r"(?:Tot|tot|ermordet|verstarb|umgekommen)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
-    re.compile(r"(?:in\s+den\s+Tod\s+getrieben|gewaltsam\s+gestorben)\s+(?:am\s+\d+[\.\d]*\s+)?(19[34][0-9])"),
-]
+# Persecution-date extraction. Each Stolperstein inscription/biography
+# usually contains an explicit DD.MM.YYYY ("Deportiert am 25.07.1942",
+# "Tot 26.3.1942"), occasionally a "Monat YYYY" form, and at minimum a
+# year. We pick the earliest such date — the moment the person's life
+# was first touched by the NS state. The timeline plays at month
+# resolution, so a precise day matters less than the right month.
+GERMAN_MONTHS = {
+    "januar": 1, "februar": 2, "märz": 3, "maerz": 3, "april": 4,
+    "mai": 5, "juni": 6, "juli": 7, "august": 8, "september": 9,
+    "oktober": 10, "november": 11, "dezember": 12,
+}
+
+DATE_DDMMYYYY = re.compile(r"\b(\d{1,2})\.\s*(\d{1,2})\.\s*(19[34][0-9])\b")
+DATE_MONTH_YEAR = re.compile(
+    r"\b(?:im\s+|am\s+\d+\s*\.?\s*)?"
+    r"(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s+(19[34][0-9])\b",
+    re.I,
+)
+DATE_YEAR_ONLY = re.compile(r"\b(19[34][0-9])\b")
 
 
-def persecution_year(stone: dict) -> int | None:
+def persecution_date(stone: dict) -> str | None:
+    """Return an ISO YYYY-MM-DD string for the earliest persecution
+    event mentioned, or None."""
     text = " ".join(filter(None, [
         stone.get("inscription") or "",
         stone.get("bio") or "",
     ]))
     if not text:
         return None
-    found: list[int] = []
-    for pat in PERSECUTION_YEAR_PATTERNS:
-        for m in pat.finditer(text):
+    candidates: list[str] = []
+    for d, m, y in DATE_DDMMYYYY.findall(text):
+        try:
+            di, mi, yi = int(d), int(m), int(y)
+            if 1933 <= yi <= 1945 and 1 <= mi <= 12 and 1 <= di <= 31:
+                candidates.append(f"{yi:04d}-{mi:02d}-{di:02d}")
+        except ValueError:
+            continue
+    for mon, y in DATE_MONTH_YEAR.findall(text):
+        mi = GERMAN_MONTHS.get(mon.lower())
+        try:
+            yi = int(y)
+            if mi and 1933 <= yi <= 1945:
+                candidates.append(f"{yi:04d}-{mi:02d}-15")
+        except ValueError:
+            continue
+    if not candidates:
+        for y in DATE_YEAR_ONLY.findall(text):
             try:
-                year = int(m.group(1))
-                if 1933 <= year <= 1945:
-                    found.append(year)
+                yi = int(y)
+                if 1933 <= yi <= 1945:
+                    # Year-only fallback: use mid-year so the marker
+                    # appears at a reasonable moment in the timeline.
+                    candidates.append(f"{yi:04d}-06-15")
             except ValueError:
                 continue
-    return min(found) if found else None
+    return min(candidates) if candidates else None
 
 
 # ---------------------------------------------------------------- Stolpersteine
@@ -133,11 +158,11 @@ def build_stolpersteine() -> tuple[int, int]:
         first = stones[0]
         lat, lng = key
         names = [s["name"] for s in stones]
-        # Earliest persecution year across all stones at this address —
-        # the timeline shows the address from this year onward.
-        years = [persecution_year(s) for s in stones]
-        valid_years = [y for y in years if y is not None]
-        first_year = min(valid_years) if valid_years else None
+        # Earliest persecution date across all stones at this address —
+        # the timeline shows the address from this date onward.
+        dates = [persecution_date(s) for s in stones]
+        valid_dates = [d for d in dates if d is not None]
+        first_date = min(valid_dates) if valid_dates else None
         features.append({
             "type": "Feature",
             "id": loc_id,
@@ -148,10 +173,10 @@ def build_stolpersteine() -> tuple[int, int]:
                 "district": first.get("district"),
                 "count": len(stones),
                 "names": names[:6],
-                # year is null when no persecution date could be parsed —
-                # frontend treats those as "always visible" so we don't
-                # erase real Stolpersteine from the timeline.
-                "year": first_year,
+                # date is null when nothing could be parsed — frontend
+                # treats those as "always visible". 90% of MG stones have
+                # day+month+year in the inscription so this is rare.
+                "date": first_date,
             },
         })
         (out_dir / f"{loc_id}.json").write_text(
@@ -311,48 +336,47 @@ def collect_ns_persons() -> list[dict]:
         return []
     out: list[dict] = []
     for p in json.loads(src_path.read_text()):
-        # Compute representative NS-era year for the timeline:
-        # - Holocaust victims → year of death
-        # - NSDAP / Widerstand → first NS-era touchpoint (1933 baseline,
-        #   or year of death if earlier than 1945)
-        year: int | None = None
+        # Representative date for the timeline:
+        # - Holocaust victims → date of death (best signal of NS impact)
+        # - NSDAP / Widerstand → 1933-01-30 baseline (Machtergreifung)
+        date: str | None = None
         if p.get("death"):
+            d = p["death"]
             try:
-                y = int(p["death"][:4])
-                if 1933 <= y <= 1945:
-                    year = y
+                yi = int(d[:4])
+                if 1933 <= yi <= 1945:
+                    date = d if len(d) == 10 else f"{d[:4]}-06-15"
             except ValueError:
                 pass
-        if year is None and "Holocaust-Opfer" not in p.get("roles", []):
-            year = 1933
-        out.append({
-            **p,
-            "year": year,
-        })
+        if date is None and "Holocaust-Opfer" not in p.get("roles", []):
+            date = "1933-01-30"
+        # Inject as `description`-overlay so the existing field "date"
+        # is set during the build's per-entry pass.
+        out.append({**p, "date": date})
     return out
 
 
-# When a sub-layer's entries have a clear NS-era year, the timeline
-# uses it. For categories that span the whole period (cemeteries,
-# memorials erected post-war) we leave year=null so they remain visible
-# at every slider position.
-CATEGORY_DEFAULT_YEAR: dict[str, int | None] = {
-    "destroyed_synagogue": 1938,    # Reichspogromnacht
-    "synagogue_memorial": 1938,
-    "bunker": 1941,                  # NS air-raid bunker construction phase begins
-    "stolperschwelle": None,         # post-war commemoration
-    "perpetrator_site": 1933,        # Machtergreifung anchor
-    "forced_labor": 1942,            # peak forced-labor recruitment
-    "pow_camp_memorial": 1941,
-    "concentration_camp": 1941,
-    "ns_victim_memorial": 1942,      # mid-war
-    "resistance_memorial": 1933,     # ongoing throughout NS era
-    "jewish_cemetery": None,         # pre-existing, persisted through NS
-    "jewish_site": None,
-    "ns_memorial": None,
-    "memorial_other": None,
-    "aryanization": 1938,
-    "renamed_street": 1933,
+# When a sub-layer's entries have a clear NS-era moment, the timeline
+# uses it (ISO YYYY-MM-DD). Categories that span the whole period
+# (cemeteries, memorials erected post-war) stay null so they remain
+# visible at every slider position.
+CATEGORY_DEFAULT_DATE: dict[str, str | None] = {
+    "destroyed_synagogue":  "1938-11-09",  # Reichspogromnacht
+    "synagogue_memorial":   "1938-11-09",
+    "bunker":               "1941-06-15",  # bulk Hochbunker construction
+    "stolperschwelle":      None,          # post-war commemoration
+    "perpetrator_site":     "1933-01-30",  # Machtergreifung
+    "forced_labor":         "1942-06-15",
+    "pow_camp_memorial":    "1941-06-15",
+    "concentration_camp":   "1941-06-15",
+    "ns_victim_memorial":   "1942-06-15",
+    "resistance_memorial":  "1933-01-30",
+    "jewish_cemetery":      None,
+    "jewish_site":          None,
+    "ns_memorial":          None,
+    "memorial_other":       None,
+    "aryanization":         "1938-11-15",
+    "renamed_street":       "1933-04-01",  # most NS street renamings spring 1933
 }
 
 
@@ -428,20 +452,42 @@ def build_ns_orte() -> dict[str, int]:
 
         cat = e.get("category", "ns_memorial")
         sublayer = CATEGORY_TO_SUBLAYER.get(cat, "ns-gedenkorte")
-        # Try to extract an explicit NS-era year from the description;
-        # otherwise fall back to the category default. null means "always
-        # visible on the timeline".
-        year: int | None = None
+        # Date precedence: explicit `date` from the source (e.g. Wikidata
+        # death date) wins; otherwise scan the description; finally fall
+        # back to the category default. null = always visible.
+        date: str | None = e.get("date") or None
         desc = e.get("description") or ""
-        for ym in re.finditer(r"\b(19[34][0-9])\b", desc):
+        # day.month.year wins
+        if date is None:
+          for d, m, y in DATE_DDMMYYYY.findall(desc):
             try:
-                y = int(ym.group(1))
-                if 1933 <= y <= 1945:
-                    year = y if year is None else min(year, y)
+                di, mi, yi = int(d), int(m), int(y)
+                if 1933 <= yi <= 1945 and 1 <= mi <= 12 and 1 <= di <= 31:
+                    iso = f"{yi:04d}-{mi:02d}-{di:02d}"
+                    date = iso if date is None else min(date, iso)
             except ValueError:
                 continue
-        if year is None:
-            year = CATEGORY_DEFAULT_YEAR.get(cat)
+        if date is None:
+            for mon, y in DATE_MONTH_YEAR.findall(desc):
+                mi = GERMAN_MONTHS.get(mon.lower())
+                try:
+                    yi = int(y)
+                    if mi and 1933 <= yi <= 1945:
+                        iso = f"{yi:04d}-{mi:02d}-15"
+                        date = iso if date is None else min(date, iso)
+                except ValueError:
+                    continue
+        if date is None:
+            for ym in re.finditer(r"\b(19[34][0-9])\b", desc):
+                try:
+                    yi = int(ym.group(1))
+                    if 1933 <= yi <= 1945:
+                        iso = f"{yi:04d}-06-15"
+                        date = iso if date is None else min(date, iso)
+                except ValueError:
+                    continue
+        if date is None:
+            date = CATEGORY_DEFAULT_DATE.get(cat)
         feature = {
             "type": "Feature",
             "id": eid,
@@ -451,7 +497,7 @@ def build_ns_orte() -> dict[str, int]:
                 "name": e.get("name", ""),
                 "category": cat,
                 "address": e.get("address", ""),
-                "year": year,
+                "date": date,
             },
         }
         by_sublayer.setdefault(sublayer, []).append(feature)

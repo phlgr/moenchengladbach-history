@@ -25,7 +25,7 @@ function HomePage() {
   const [deportationCount, setDeportationCount] = useState<number | null>(
     null,
   );
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
+  const [currentDate, setCurrentDate] = useState<string | null>(null);
 
   const toggle = useCallback(
     (id: ThemeId) => setActive((a) => ({ ...a, [id]: !a[id] })),
@@ -57,8 +57,8 @@ function HomePage() {
         setDeportationMode,
         deportationCount,
         setDeportationCount,
-        currentYear,
-        setCurrentYear,
+        currentDate,
+        setCurrentDate,
       }}
     >
       <main className="relative h-screen w-screen overflow-hidden">

@@ -1,67 +1,90 @@
 import { useEffect, useRef, useState } from "react";
 import { useLayerState } from "../lib/layerState";
 
-const START = 1933;
-const END = 1945;
-const YEARS = END - START + 1;
-const PLAY_INTERVAL_MS = 750;
+const START_YEAR = 1933;
+const END_YEAR = 1945;
+const TOTAL_MONTHS = (END_YEAR - START_YEAR + 1) * 12; // 156
+const PLAY_INTERVAL_MS = 80; // ~12.5 s for the full 1933 → 1945 sweep
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mär",
+  "Apr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Dez",
+];
+
+function monthIndexToDate(idx: number): string {
+  const year = START_YEAR + Math.floor(idx / 12);
+  const month = (idx % 12) + 1;
+  return `${year}-${String(month).padStart(2, "0")}-15`;
+}
+
+function dateToMonthIndex(iso: string | null): number | null {
+  if (!iso) return null;
+  const [y, m] = iso.split("-").map(Number);
+  if (!y || !m) return null;
+  return (y - START_YEAR) * 12 + (m - 1);
+}
+
+function formatLong(iso: string): string {
+  const [y, m] = iso.split("-").map(Number);
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+}
 
 export function Timeline() {
-  const { currentYear, setCurrentYear } = useLayerState();
+  const { currentDate, setCurrentDate } = useLayerState();
   const [playing, setPlaying] = useState(false);
-  const playingRef = useRef(false);
 
-  useEffect(() => {
-    playingRef.current = playing;
-  }, [playing]);
+  const idx = dateToMonthIndex(currentDate);
 
-  // Auto-advance year while playing
   useEffect(() => {
     if (!playing) return;
-    const id = setInterval(() => {
-      setCurrentYear(currentYear === null ? START : currentYear);
-    }, 0);
-    clearInterval(id);
-
-    let y = currentYear ?? START;
-    setCurrentYear(y);
+    let i = idx ?? 0;
+    setCurrentDate(monthIndexToDate(i));
     const tick = setInterval(() => {
-      y += 1;
-      if (y > END) {
+      i += 1;
+      if (i >= TOTAL_MONTHS) {
         clearInterval(tick);
         setPlaying(false);
-        // Hold the final year for a beat, then return to "Alle" so the
-        // clustering re-engages and the user sees the full picture again.
-        setTimeout(() => setCurrentYear(null), 1600);
+        // Hold the final month for a beat, then return to "Alle".
+        setTimeout(() => setCurrentDate(null), 1800);
         return;
       }
-      setCurrentYear(y);
+      setCurrentDate(monthIndexToDate(i));
     }, PLAY_INTERVAL_MS);
     return () => clearInterval(tick);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
-  const showAll = currentYear === null;
+  const showAll = currentDate === null;
 
-  function jumpTo(year: number) {
+  function jumpToMonth(i: number) {
     setPlaying(false);
-    setCurrentYear(year);
+    setCurrentDate(monthIndexToDate(i));
   }
 
   function reset() {
     setPlaying(false);
-    setCurrentYear(null);
+    setCurrentDate(null);
   }
 
   function togglePlay() {
-    if (currentYear === null || currentYear >= END) {
-      setCurrentYear(START);
+    if (currentDate === null || (idx !== null && idx >= TOTAL_MONTHS - 1)) {
+      setCurrentDate(monthIndexToDate(0));
     }
     setPlaying((p) => !p);
   }
 
   return (
-    <div className="pointer-events-auto absolute bottom-6 left-1/2 z-10 w-[min(640px,calc(100%-3rem))] -translate-x-1/2">
+    <div className="pointer-events-auto absolute bottom-6 left-1/2 z-10 w-[min(680px,calc(100%-3rem))] -translate-x-1/2">
       <div className="akte-grain akte-reveal relative flex items-stretch gap-3 border border-paper-edge bg-paper-light/95 px-4 py-2.5 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
         <button
           type="button"
@@ -78,31 +101,25 @@ export function Timeline() {
 
         <div className="flex flex-1 flex-col">
           <div className="flex items-baseline justify-between">
-            <span
-              className="akte-label"
-              style={{ fontSize: "0.55rem" }}
-            >
+            <span className="akte-label" style={{ fontSize: "0.55rem" }}>
               Zeitstrahl
             </span>
             <span
               className="akte-display tabular-nums"
               style={{
-                fontSize: "1.6rem",
+                fontSize: "1.45rem",
                 lineHeight: 1,
                 color: showAll
                   ? "var(--color-faded)"
                   : "var(--color-red-oxide)",
                 fontWeight: 500,
-                letterSpacing: "-0.01em",
+                letterSpacing: "-0.005em",
               }}
             >
-              {showAll ? "—" : currentYear}
+              {showAll ? "—" : formatLong(currentDate!)}
             </span>
           </div>
-          <YearScale
-            current={currentYear}
-            onChange={jumpTo}
-          />
+          <MonthScale current={idx} onJump={jumpToMonth} />
         </div>
 
         <button
@@ -110,15 +127,10 @@ export function Timeline() {
           onClick={reset}
           aria-label="Alle Jahre zeigen"
           className={`flex shrink-0 items-center px-3 transition-colors ${
-            showAll
-              ? "text-faded-light"
-              : "text-faded hover:text-ink"
+            showAll ? "text-faded-light" : "text-faded hover:text-ink"
           }`}
         >
-          <span
-            className="akte-label"
-            style={{ fontSize: "0.6rem" }}
-          >
+          <span className="akte-label" style={{ fontSize: "0.6rem" }}>
             Alle
           </span>
         </button>
@@ -127,66 +139,127 @@ export function Timeline() {
   );
 }
 
-function YearScale({
+function MonthScale({
   current,
-  onChange,
+  onJump,
 }: {
   current: number | null;
-  onChange: (y: number) => void;
+  onJump: (i: number) => void;
 }) {
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    const rect = target.getBoundingClientRect();
+    function update(clientX: number) {
+      const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const i = Math.round(t * (TOTAL_MONTHS - 1));
+      onJump(i);
+    }
+    update(e.clientX);
+    const move = (ev: PointerEvent) => update(ev.clientX);
+    const up = () => {
+      target.removeEventListener("pointermove", move);
+      target.removeEventListener("pointerup", up);
+    };
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", up);
+  }
+
   return (
-    <div className="relative mt-1.5 flex h-8 items-end">
-      {/* Track */}
+    <div
+      className="relative mt-1.5 h-9 cursor-pointer touch-none"
+      onPointerDown={onPointerDown}
+      role="slider"
+      aria-label="Zeitstrahl"
+      aria-valuemin={0}
+      aria-valuemax={TOTAL_MONTHS - 1}
+      aria-valuenow={current ?? 0}
+      tabIndex={0}
+    >
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-3 h-px bg-paper-edge"
+        className="absolute inset-x-0 bottom-4 h-px bg-paper-edge"
       />
-      {Array.from({ length: YEARS }, (_, i) => {
-        const year = START + i;
-        const active = current !== null && year <= current;
-        const isCurrent = current === year;
+      {/* Year tick marks (one per Jan) */}
+      {Array.from({ length: END_YEAR - START_YEAR + 1 }, (_, yi) => {
+        const monthIdx = yi * 12;
+        const left = (monthIdx / (TOTAL_MONTHS - 1)) * 100;
+        const year = START_YEAR + yi;
+        const passed = current !== null && monthIdx <= current;
         return (
-          <button
-            key={year}
-            type="button"
-            onClick={() => onChange(year)}
-            aria-label={`Jahr ${year}`}
-            className="group relative flex flex-1 cursor-pointer flex-col items-center justify-end"
-            style={{ minWidth: 0 }}
+          <span
+            key={yi}
+            aria-hidden
+            className="absolute"
+            style={{
+              left: `${left}%`,
+              transform: "translateX(-50%)",
+              bottom: "12px",
+            }}
           >
             <span
-              aria-hidden
-              className={`block h-2 w-px transition-all ${
-                isCurrent
-                  ? "h-4 bg-red-oxide"
-                  : active
-                    ? "bg-sepia"
-                    : "bg-paper-edge"
-              }`}
+              className="block h-2 w-px"
+              style={{
+                background: passed
+                  ? "var(--color-sepia)"
+                  : "var(--color-paper-edge)",
+              }}
             />
             <span
-              aria-hidden
-              className={`absolute -bottom-3 mt-0.5 select-none transition-opacity ${
-                isCurrent || year % 2 === 1
-                  ? "opacity-100"
-                  : "opacity-0 group-hover:opacity-100"
-              }`}
+              className="absolute select-none whitespace-nowrap"
               style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: isCurrent ? "0.62rem" : "0.55rem",
-                color: isCurrent
-                  ? "var(--color-red-oxide)"
-                  : active
-                    ? "var(--color-faded)"
-                    : "var(--color-faded-light)",
-                fontWeight: isCurrent ? 500 : 400,
+                fontSize: "0.55rem",
+                color: passed ? "var(--color-faded)" : "var(--color-faded-light)",
+                top: "-12px",
+                left: "50%",
+                transform: "translateX(-50%)",
               }}
             >
               {String(year).slice(2)}
             </span>
-          </button>
+          </span>
         );
       })}
+      {/* Half-year minor ticks */}
+      {Array.from({ length: END_YEAR - START_YEAR + 1 }, (_, yi) => {
+        const monthIdx = yi * 12 + 6;
+        if (monthIdx >= TOTAL_MONTHS) return null;
+        const left = (monthIdx / (TOTAL_MONTHS - 1)) * 100;
+        return (
+          <span
+            key={`mid-${yi}`}
+            aria-hidden
+            className="absolute block h-1 w-px bg-paper-edge"
+            style={{
+              left: `${left}%`,
+              bottom: "12px",
+              transform: "translateX(-50%)",
+            }}
+          />
+        );
+      })}
+      {/* Played-portion bar */}
+      {current !== null && (
+        <span
+          aria-hidden
+          className="absolute bottom-[12px] left-0 h-px bg-sepia"
+          style={{
+            width: `${(current / (TOTAL_MONTHS - 1)) * 100}%`,
+          }}
+        />
+      )}
+      {/* Current-position thumb */}
+      {current !== null && (
+        <span
+          aria-hidden
+          className="absolute bottom-[6px] h-4 w-[2px] bg-red-oxide"
+          style={{
+            left: `${(current / (TOTAL_MONTHS - 1)) * 100}%`,
+            transform: "translateX(-50%)",
+          }}
+        />
+      )}
     </div>
   );
 }
