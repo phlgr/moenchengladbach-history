@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Pause, Play } from "lucide-react";
 import { useLayerState } from "../lib/layerState";
 import { useReducedMotion } from "../lib/useReducedMotion";
 
@@ -127,7 +128,11 @@ export function Timeline() {
               : "border-paper-edge bg-paper text-ink hover:border-sepia hover:text-sepia"
           }`}
         >
-          {playing ? <PauseIcon /> : <PlayIcon />}
+          {playing ? (
+            <Pause className="h-4 w-4" strokeWidth={1.6} fill="currentColor" />
+          ) : (
+            <Play className="h-4 w-4" strokeWidth={1.6} fill="currentColor" />
+          )}
         </button>
 
         <div className="flex flex-1 flex-col">
@@ -376,19 +381,3 @@ function MonthScale({
   );
 }
 
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-      <path d="M7 5 V19 L19 12 Z" />
-    </svg>
-  );
-}
-
-function PauseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-      <rect x="6" y="5" width="4" height="14" />
-      <rect x="14" y="5" width="4" height="14" />
-    </svg>
-  );
-}

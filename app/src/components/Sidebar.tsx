@@ -1,4 +1,17 @@
 import { useEffect, useState } from "react";
+import {
+  Fence,
+  Flame,
+  Footprints,
+  Gavel,
+  Hammer,
+  Landmark,
+  Shield,
+  Signpost,
+  Stone,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type { ThemeId } from "../lib/themes";
 
 type Stone = {
@@ -69,24 +82,51 @@ function commonsFilePage(filename: string): string {
   return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(safe)}`;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  destroyed_synagogue: "M12 2 L21 18 H3 Z M12 22 L3 6 H21 Z",
-  synagogue_memorial: "M12 2 L21 18 H3 Z M12 22 L3 6 H21 Z",
-  jewish_cemetery: "M5 22 V10 a7 7 0 0114 0 V22 Z",
-  jewish_site: "M5 22 V10 a7 7 0 0114 0 V22 Z",
-  bunker: "M3 20 V12 L7 8 H17 L21 12 V20 Z M9 20 V14 H15 V20",
-  stolperschwelle: "M4 6 H20 V18 H4 Z",
-  perpetrator_site: "M4 4 H20 V20 H4 Z M4 4 L20 20 M20 4 L4 20",
-  // Renamed street: a simple street-sign rectangle with a horizontal rule
-  renamed_street: "M3 8 H21 V16 H3 Z M3 12 H21",
-  forced_labor: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
-  pow_camp_memorial: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
-  concentration_camp: "M3 20 V13 L12 7 L21 13 V20 Z M9 20 V15 H15 V20",
-  resistance_memorial: "M12 2 C8 6 6 9 6 13 a6 6 0 0012 0 C18 9 16 6 12 2 Z",
-  ns_victim_memorial: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
-  ns_memorial: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
-  memorial_other: "M12 4 a8 8 0 110 16 a8 8 0 110-16 M9 4 V20 M15 4 V20",
-  stolperstein: "M5 5 H19 V19 H5 Z M8 9 H16 M8 12 H16 M8 15 H13",
+// Star of David — drawn here directly because Lucide has no equivalent.
+// Two equilateral triangles, both with centroid (12, 12) and R = 11.
+function StarOfDavid({
+  className,
+  strokeWidth = 1.5,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 1 L21.526 17.5 L2.474 17.5 Z" />
+      <path d="M12 23 L2.474 6.5 L21.526 6.5 Z" />
+    </svg>
+  );
+}
+
+type CategoryIcon = LucideIcon | typeof StarOfDavid;
+
+const CATEGORY_ICONS: Record<string, CategoryIcon> = {
+  destroyed_synagogue: StarOfDavid,
+  synagogue_memorial: StarOfDavid,
+  jewish_cemetery: StarOfDavid,
+  jewish_site: StarOfDavid,
+  bunker: Shield,
+  stolperschwelle: Footprints,
+  perpetrator_site: Gavel,
+  renamed_street: Signpost,
+  forced_labor: Hammer,
+  pow_camp_memorial: Fence,
+  concentration_camp: Fence,
+  resistance_memorial: Flame,
+  ns_victim_memorial: Landmark,
+  ns_memorial: Landmark,
+  memorial_other: Landmark,
+  stolperstein: Stone,
 };
 
 function MediaPlaceholder({
@@ -96,7 +136,7 @@ function MediaPlaceholder({
   category: string;
   label: string;
 }) {
-  const path = CATEGORY_ICONS[category] ?? CATEGORY_ICONS["ns_memorial"];
+  const Icon = CATEGORY_ICONS[category] ?? CATEGORY_ICONS["ns_memorial"];
   return (
     <div
       aria-hidden
@@ -111,17 +151,10 @@ function MediaPlaceholder({
       <CornerMark className="right-3 top-3" position="tr" />
       <CornerMark className="bottom-3 left-3" position="bl" />
       <CornerMark className="bottom-3 right-3" position="br" />
-      <svg
-        viewBox="0 0 24 24"
+      <Icon
         className="h-16 w-16 text-sepia/70"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d={path} />
-      </svg>
+        strokeWidth={1.1}
+      />
       <div className="akte-label" style={{ fontSize: "0.6rem" }}>
         {label}
       </div>
@@ -283,14 +316,7 @@ export function Sidebar({
           >
             Esc
           </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="h-4 w-4"
-          >
-            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-          </svg>
+          <X className="h-4 w-4" strokeWidth={1.75} />
         </button>
       </div>
 

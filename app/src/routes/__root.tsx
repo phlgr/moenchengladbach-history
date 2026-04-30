@@ -29,6 +29,9 @@ export const Route = createRootRoute({
       },
       { title: "Mönchengladbach History" },
     ],
+    links: [
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+    ],
   }),
   component: RootComponent,
 });

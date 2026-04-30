@@ -1,3 +1,5 @@
+import { Route } from "lucide-react";
+
 export function DeportationToggle({
   active,
   onToggle,
@@ -57,22 +59,13 @@ export function DeportationToggle({
 
 function DeportationGlyph({ active }: { active: boolean }) {
   return (
-    <svg
+    <Route
       aria-hidden
-      width="22"
-      height="14"
-      viewBox="0 0 44 28"
-      fill="none"
-      stroke={active ? "var(--color-red-oxide)" : "var(--color-sepia)"}
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="6" cy="22" r="2" fill="currentColor" />
-      <path d="M6 22 Q 16 4 38 8" />
-      <path d="M6 22 Q 22 8 40 14" opacity="0.7" />
-      <path d="M6 22 Q 24 12 36 22" opacity="0.45" />
-      <path d="M38 8 L40 14 L36 22" stroke="none" fill="currentColor" />
-    </svg>
+      className="h-4 w-4"
+      strokeWidth={1.6}
+      style={{
+        color: active ? "var(--color-red-oxide)" : "var(--color-sepia)",
+      }}
+    />
   );
 }
