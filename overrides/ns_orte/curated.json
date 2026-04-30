@@ -52,6 +52,16 @@
       "source_url": "https://de.wikipedia.org/wiki/Joseph_Goebbels"
     },
     {
+      "id": "ns-stolperschwelle-friedrich-ebert-82-84",
+      "name": "Stolperschwelle Friedrich-Ebert-Straße 82–84",
+      "category": "stolperschwelle",
+      "lat": 51.168877,
+      "lng": 6.440401,
+      "address": "Friedrich-Ebert-Straße 82–84, Rheydt",
+      "description": "Erste Stolperschwelle Mönchengladbachs, am 13. Dezember 2021 von Gunter Demnig verlegt. Inschrift: «Als Fabrikantenvilla erbaut 1861 — 1933–1942 Haushaltungsschule für 161 Jüdinnen und Juden — Seit 1935 auch als jüdisches Altersheim genutzt — 1941–1942 wurden die Bewohnerinnen/Bewohner deportiert.» Stolperschwellen werden für Orte verlegt, an denen mehrere Personen kollektiv betroffen waren — anders als der Stolperstein, der einer Einzelperson gewidmet ist.",
+      "source_url": "https://de.wikipedia.org/wiki/Liste_der_Stolpersteine_in_M%C3%B6nchengladbach_%E2%80%93_Stadtbezirk_S%C3%BCd"
+    },
+    {
       "id": "ns-zwangsarbeiter-preyerstrasse",
       "name": "Zwangsarbeitergräber Preyerstraße",
       "category": "forced_labor",
