@@ -43,3 +43,33 @@ overrides/     # hand-curated entries (committed)
 scripts/       # data build pipeline
 app/           # TanStack Start web app
 ```
+
+## Map assets (basemap.pmtiles, sprites, fonts)
+
+These files are committed to the repo so the app works without extra downloads. To rebuild them:
+
+**Basemap pmtiles** — extracts a tight Mönchengladbach city layer (z=8–14) and a European overview for the deportation cinematic (z=0–7), then merges them into a single ~38 MB archive:
+
+```bash
+# Install pmtiles CLI (Linux x86_64):
+curl -sL https://github.com/protomaps/go-pmtiles/releases/latest/download/go-pmtiles_*_Linux_x86_64.tar.gz | tar -xz -C ~/.local/bin
+export PATH="$HOME/.local/bin:$PATH"
+
+SRC_URL=https://demo-bucket.protomaps.com/v4.pmtiles
+TMP=$(mktemp -d) && \
+pmtiles extract "$SRC_URL" "$TMP/mg.pmtiles" --bbox="6.30,51.05,6.65,51.32" --minzoom=8 --maxzoom=14 && \
+pmtiles extract "$SRC_URL" "$TMP/eu.pmtiles" --bbox="-2,44,32,60" --minzoom=0 --maxzoom=7 && \
+pmtiles merge "$TMP/eu.pmtiles" "$TMP/mg.pmtiles" app/public/map-assets/basemap.pmtiles && \
+rm -rf "$TMP"
+```
+
+**Sprites & fonts** — downloads Protomaps basemaps assets (light sprites + Noto Sans glyph PBFs):
+
+```bash
+curl -sL https://codeload.github.com/protomaps/basemaps-assets/tar.gz/refs/heads/main \
+  | tar -xzf - -C /tmp && \
+  SRC=/tmp/basemaps-assets-main DEST=app/public/map-assets && \
+  mkdir -p "$DEST/sprites/v4" "$DEST/fonts" && \
+  cp "$SRC/sprites/v4/light"{.json,.png,@2x.json,@2x.png} "$DEST/sprites/v4/" && \
+  cp -r "$SRC/fonts/Noto Sans "{Regular,Italic,Medium} "$DEST/fonts/"
+```

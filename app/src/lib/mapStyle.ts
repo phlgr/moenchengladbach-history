@@ -3,10 +3,9 @@ import { layersWithPartialCustomTheme } from "protomaps-themes-base";
 
 /**
  * PMTiles archive — served from the app's own public directory so the
- * map has no third-party runtime dependency. Built by
- *   scripts/build_pmtiles.sh
- * which extracts a tight MG city archive at z=8..14 and a wide Europe
- * overview at z=0..7, then merges them into a single ~38 MB archive.
+ * map has no third-party runtime dependency. Built by extracting a tight
+ * MG city archive at z=8..14 and a wide Europe overview at z=0..7, then
+ * merging them into a single ~38 MB archive (see README for commands).
  * One file is enough because z<8 covers the deportation cinematic
  * frame and z>=8 covers city detail; the two zoom ranges are disjoint
  * so `pmtiles merge` can stitch them without overlap conflicts.
