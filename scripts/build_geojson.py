@@ -241,6 +241,19 @@ def collect_ns_curated() -> list[dict]:
     return data.get("entries", [])
 
 
+def collect_ns_auto() -> list[dict]:
+    """Auto-extracted curated-style entries (bunkers, Stolperschwellen, …)
+    parsed from canonical Wikipedia list pages.
+
+    Loaded *after* the manual curated.json so the manual entries win
+    spatial dedup and hand-edits aren't overwritten.
+    """
+    src_path = RAW / "ns_orte_auto.json"
+    if not src_path.exists():
+        return []
+    return json.loads(src_path.read_text())
+
+
 CATEGORY_TO_SUBLAYER: dict[str, str] = {
     "destroyed_synagogue": "ns-synagogen",
     "synagogue_memorial": "ns-synagogen",
@@ -272,7 +285,8 @@ def build_ns_orte() -> dict[str, int]:
     written: set[str] = set()
 
     all_entries: list[dict] = []
-    all_entries.extend(collect_ns_curated())
+    all_entries.extend(collect_ns_curated())  # manual — highest priority
+    all_entries.extend(collect_ns_auto())     # auto-extracted from WP
     all_entries.extend(collect_ns_baudenkmaeler())
     all_entries.extend(collect_ns_osm())
     all_entries.extend(collect_ns_narrative())
