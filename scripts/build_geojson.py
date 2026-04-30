@@ -202,22 +202,17 @@ def collect_ns_osm() -> list[dict]:
     return json.loads(src_path.read_text())
 
 
-# Administrative-only WP titles that the narrative scanner may pull in
-# but which would just dump a marker on a district centroid. We have
-# more specific entries elsewhere or the content is too generic.
+# Generic city/district WP articles that would just dump a marker on a
+# centroid without a specific story. The smaller districts (Westend,
+# Hehn, Venn, Rheindahlen, Wickrath, Wanlo, Odenkirchen) ARE allowed —
+# their narrative often points to a single concrete NS event (Aktion T4,
+# Pfarrer-vs-Gestapo, destroyed synagogue) so the centroid is the best
+# anchor we have.
 NARRATIVE_BLOCKLIST: set[str] = {
     "Mönchengladbach",
     "Rheydt",
-    "Lürrip",
     "Broich (Mönchengladbach)",
-    "Wickrath",
-    "Wickrathberg",
-    "Wanlo",
-    "Hehn (Mönchengladbach)",
-    "Venn (Mönchengladbach)",
-    "Rheindahlen",
-    "Odenkirchen",
-    "Westend (Mönchengladbach)",
+    "Lürrip",
 }
 
 

@@ -40,20 +40,51 @@ MG_QID = "Q2758"
 # but "Machtergreifung 1933" is.
 NS_NARRATIVE = re.compile(
     r"\b("
-    r"Goebbels|Adolf\s+Hitler|NSDAP|Nationalsozialist|Nationalsozialismus|"
-    r"Drittes\s+Reich|Hitlerjugend|HJ-Heim|"
-    r"Reichspogrom|Reichskristall|Pogromnacht|"
+    # Top NSDAP figures + party
+    r"Goebbels|Adolf\s+Hitler|Heinrich\s+Himmler|Hermann\s+Göring|"
+    r"NSDAP|NS-Regime|NS-Staat|"
+    r"Nationalsozialist|Nationalsozialismus|Drittes\s+Reich|"
+    r"Machtergreifung|Gleichschaltung|"
+    # Local NSDAP infrastructure
+    r"Ortsgruppenleiter|Ortsgruppe\s+(?:der\s+)?NSDAP|Kreisleitung|"
+    r"Gauleitung|Kreisleiter|Gauleiter|Reichsstatthalter|"
+    # Mass orgs
+    r"Hitlerjugend|HJ-Heim|HJ-Bann|Bund\s+Deutscher\s+M[äa]del|BDM-Heim|"
+    r"NS-Frauenschaft|NS-Volkswohlfahrt|Reichsarbeitsdienst|RAD-Lager|"
+    r"Deutsche\s+Arbeitsfront|DAF|Kraft\s+durch\s+Freude|"
+    # Persecution & violence
+    r"Reichspogrom|Reichskristall|Pogromnacht|Novemberpogrom|"
     r"arisiert|Arisierung|enteignet|"
-    r"deportiert|Deportation|"
-    r"Konzentrationslager|KZ\s+|"
+    r"deportiert|Deportation|Sammeltransport|"
+    r"Konzentrationslager|KZ\s+|KZ-Außen|Außenlager|"
+    r"Vernichtungslager|"
+    r"Schutzhaft|Schutzhaftlager|Strafgefangenenlager|"
+    r"Aktion\s+T4|Euthanasie|Verlegung\s+nach.*Hadamar|Krankenmord|"
     r"Holocaust|Shoah|"
     r"Stolperstein|Stolperschwelle|"
-    r"Gestapo|SA-Sturm|SS-Standort|"
-    r"Hochbunker|Luftschutzbunker|"
-    r"Synagoge.*?(zerstört|niedergebrannt|abgerissen)|"
-    r"Zwangsarbeit|"
-    r"Reichsbahn.*?Deportation|"
-    r"Ehrenmal\s+der\s+SA"
+    # Repression apparatus
+    r"Gestapo|Geheime\s+Staatspolizei|"
+    r"SA-Sturm|SS-Standort|SS-Wachmannschaft|Sturmlokal|"
+    # Resistance
+    r"Widerstandsk[äa]mpfer|Widerstand\s+gegen|"
+    r"Edelweißpiraten|Swing-?Jugend|Weiße\s+Rose|"
+    r"Bekennende\s+Kirche|Kirchenkampf|"
+    # Air war / civilian protection
+    r"Hochbunker|Luftschutzbunker|Luftschutzraum|"
+    r"Bombenangriff|Luftkrieg.*1944|Luftkrieg.*1945|"
+    # Religious persecution
+    r"Synagoge.*?(zerstört|niedergebrannt|abgerissen|geplündert)|"
+    r"jüdische\s+Schule.*?(geschlossen|aufgelöst)|"
+    # Forced labor specifics
+    r"Zwangsarbeiter|Zwangsarbeitslager|Zwangsarbeits-?Lager|"
+    r"Ostarbeiter|Fremdarbeiter|"
+    # Deportation infrastructure
+    r"Reichsbahn.*?Deportation|Sammelstelle|Deportationszug|"
+    # Specific NS-era markers
+    r"Ehrenmal\s+der\s+SA|Heldengedenkfeier|"
+    r"Heim\s+ins\s+Reich|"
+    # Aryan-zoned cultural sites
+    r"Reichskulturkammer|Volksgemeinschaft"
     r")\b",
     re.I,
 )
@@ -150,23 +181,61 @@ def strip_wikitext(s: str) -> str:
 
 
 def extract_excerpt(wikitext: str) -> str | None:
-    """Pull the sentence(s) around the first NS-narrative match."""
+    """Pull the sentence(s) around the first NS-narrative match. Skip
+    extractions that landed inside an unparsed infobox (template params)
+    rather than narrative prose."""
     plain = strip_wikitext(wikitext)
     m = NS_NARRATIVE.search(plain)
     if not m:
         return None
-    # Find sentence boundaries around the match
     start = max(0, plain.rfind(".", 0, m.start()) + 1)
     end = plain.find(".", m.end())
     if end < 0:
         end = min(len(plain), m.end() + 200)
     excerpt = plain[start:end + 1].strip()
     if len(excerpt) < 40:
-        # widen
         end2 = plain.find(".", end + 1)
         if end2 > 0:
             excerpt = plain[start:end2 + 1].strip()
-    return excerpt[:1000] if excerpt else None
+    if not excerpt:
+        return None
+    # Reject excerpts that look like infobox dumps. Wikitext templates use
+    # "PARAM = value" lines; if these slip through strip_wikitext the
+    # excerpt is just metadata noise.
+    if re.search(r"[A-Z_]{4,}\s*=\s*", excerpt):
+        return None
+    return excerpt[:1000]
+
+
+# Strong markers — entries with at least one of these are real NS-Orte.
+# These are explicit NSDAP figures, party orgs, persecution events, etc.
+NS_STRONG = re.compile(
+    r"\b("
+    r"Goebbels|Adolf\s+Hitler|Heinrich\s+Himmler|Hermann\s+Göring|"
+    r"NSDAP|Nationalsozialis(?:t|mus|tisch)|Drittes\s+Reich|"
+    r"Machtergreifung|Gleichschaltung|"
+    r"Widerstandsk[äa]mpfer|"
+    r"Ortsgruppenleiter|Ortsgruppe\s+(?:der\s+)?NSDAP|Kreisleitung|Gauleiter|"
+    r"Hitlerjugend|HJ-Heim|HJ-Bann|BDM-Heim|Bund\s+Deutscher\s+M[äa]del|"
+    r"NS-Frauenschaft|NS-Volkswohlfahrt|Reichsarbeitsdienst|"
+    r"Deutsche\s+Arbeitsfront|Kraft\s+durch\s+Freude|"
+    r"Reichspogrom|Reichskristall|Pogromnacht|Novemberpogrom|"
+    r"arisiert|Arisierung|"
+    r"deportiert|Deportation|Sammeltransport|"
+    r"Konzentrationslager|KZ-Außen|Außenlager|Vernichtungslager|"
+    r"Schutzhaft|Schutzhaftlager|"
+    r"Aktion\s+T4|Euthanasie|Krankenmord|"
+    r"Holocaust|Shoah|"
+    r"Stolperstein|Stolperschwelle|"
+    r"Gestapo|SA-Sturm|SS-Standort|SS-Wachmannschaft|Sturmlokal|"
+    r"Edelweißpiraten|Swing-?Jugend|Weiße\s+Rose|"
+    r"Bekennende\s+Kirche|Kirchenkampf|"
+    r"Hochbunker|Luftschutzbunker|"
+    r"Zwangsarbeiter|Zwangsarbeitslager|Ostarbeiter|Fremdarbeiter|"
+    r"Reichskulturkammer"
+    r")\b",
+    re.I,
+)
 
 
 def first_image(wikitext: str) -> str | None:
@@ -178,8 +247,18 @@ def first_image(wikitext: str) -> str | None:
 
 def categorise(excerpt: str) -> str:
     low = excerpt.lower()
-    if "goebbels" in low or "hitler" in low:
+    if "goebbels" in low or "adolf hitler" in low or "himmler" in low:
         return "perpetrator_site"
+    if any(k in low for k in ("ortsgruppe", "kreisleitung", "gauleit",
+                              "nsdap", "ns-frauenschaft", "deutsche arbeitsfront")):
+        return "perpetrator_site"
+    if any(k in low for k in ("hitlerjugend", "hj-heim", "bdm-heim", "bdm",
+                              "reichsarbeitsdienst", "rad-lager")):
+        return "perpetrator_site"
+    if any(k in low for k in ("widerstand", "edelweißpiraten",
+                              "swing-jugend", "swingjugend", "weiße rose",
+                              "bekennende kirche", "kirchenkampf")):
+        return "resistance_memorial"
     if "synagog" in low and ("zerstört" in low or "1938" in low or "pogrom" in low):
         return "destroyed_synagogue"
     if "synagog" in low:
@@ -188,16 +267,22 @@ def categorise(excerpt: str) -> str:
         return "jewish_cemetery"
     if "bunker" in low or "luftschutz" in low or "hochbunker" in low:
         return "bunker"
-    if "konzentrationsl" in low or "kz" in low:
+    if "konzentrationsl" in low or "kz-außen" in low or "vernichtungsl" in low:
         return "concentration_camp"
-    if "zwangsarbeit" in low:
+    if any(k in low for k in ("zwangsarbeit", "ostarbeiter", "fremdarbeiter")):
         return "forced_labor"
-    if "deportier" in low or "deportation" in low:
+    if "kriegsgefangen" in low:
+        return "pow_camp_memorial"
+    if "aktion t4" in low or "euthanasie" in low or "krankenmord" in low:
+        return "ns_victim_memorial"
+    if any(k in low for k in ("deportier", "deportation", "sammeltransport")):
         return "ns_victim_memorial"
     if "arisiert" in low or "arisierung" in low or "enteignet" in low:
         return "aryanization"
     if "stolperschw" in low or "stolperstein" in low:
         return "stolperschwelle"
+    if "gestapo" in low or "schutzhaft" in low:
+        return "ns_memorial"
     return "ns_memorial"
 
 
@@ -230,6 +315,11 @@ def main() -> None:
             continue
         for title, wikitext in pages.items():
             if not NS_NARRATIVE.search(wikitext):
+                continue
+            # Require a strong NS marker somewhere in the body so we don't
+            # admit e.g. a wartime-bombed church or a wayside-cross article
+            # that only matched on a generic keyword.
+            if not NS_STRONG.search(wikitext[:6000]):
                 continue
             excerpt = extract_excerpt(wikitext)
             if not excerpt:
