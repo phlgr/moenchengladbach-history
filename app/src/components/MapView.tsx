@@ -118,6 +118,9 @@ export function MapView() {
       });
       mapInstance = map;
       mapRef.current = map;
+      if (typeof window !== "undefined") {
+        (window as unknown as { __map?: MlMap }).__map = map;
+      }
 
       map.addControl(new maplibregl.NavigationControl(), "top-right");
       map.addControl(
@@ -250,7 +253,7 @@ export function MapView() {
 
   return (
     <div className="absolute inset-0">
-      <div ref={containerRef} className="absolute inset-0" />
+      <div ref={containerRef} className="h-full w-full" />
       {count !== null && (
         <div className="pointer-events-none absolute left-4 top-20 z-10 rounded border border-sepia-light bg-paper/95 px-3 py-1 text-xs text-faded-ink shadow">
           {count} Stolpersteine

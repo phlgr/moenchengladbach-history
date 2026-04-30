@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { MapView } from "../components/MapView";
 
 export const Route = createFileRoute("/")({
