@@ -9,9 +9,9 @@ Layers:
                     3. Curated overrides in overrides/ns_orte/curated.json
 
 Outputs:
-  app/public/data/stolpersteine.geojson
-  app/public/data/ns-orte.geojson
-  app/public/data/content/<theme>/<id>.json
+  public/data/stolpersteine.geojson
+  public/data/ns-orte.geojson (split into sub-layers)
+  public/data/content/<theme>/<id>.json
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
 OVERRIDES = ROOT / "overrides"
-OUT_DATA = ROOT / "app" / "public" / "data"
+OUT_DATA = ROOT / "public" / "data"
 OUT_CONTENT = OUT_DATA / "content"
 
 # Strict keywords — only listed monuments matching one of these are

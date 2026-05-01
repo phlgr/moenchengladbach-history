@@ -43,6 +43,8 @@ def strip_wikitext(s: str, *, preserve_breaks: bool = False) -> str:
     s = re.sub(r"\[\[([^\]]+)\]\]", r"\1", s)
     s = re.sub(r"\[https?://[^\s\]]+\s+([^\]]+)\]", r"\1", s)
     s = re.sub(r"\{\{[^{}]*\}\}", "", s)
+    # Remove HTML comments (leak from Wikipedia table formatting)
+    s = re.sub(r"<!--.*?-->", "", s, flags=re.DOTALL)
     if preserve_breaks:
         return s.strip()
     return re.sub(r"\s+", " ", s).strip()

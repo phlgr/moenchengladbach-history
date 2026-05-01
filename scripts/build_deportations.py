@@ -6,8 +6,8 @@ destination ("Deportiert 1942 Riga", "ermordet in Auschwitz", etc.),
 matches it against a curated set of well-known ghetto/camp coordinates,
 and emits two artefacts:
 
-  app/public/data/deportations.geojson       — LineString per (origin, dest)
-  app/public/data/deportation-destinations.geojson — Point per destination
+  public/data/deportations.geojson       — LineString per (origin, dest)
+  public/data/deportation-destinations.geojson — Point per destination
                                                      with victim count
 
 The line LayerString uses a quadratic-bezier approximation (10 points)
@@ -29,7 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "stolpersteine_wp.json"
-OUT_DATA = ROOT / "app" / "public" / "data"
+OUT_DATA = ROOT / "public" / "data"
 
 # Canonical destinations: (display_name, lat, lng, kind)
 # Coordinates of the actual ghetto / camp / killing site. Where multiple

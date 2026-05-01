@@ -156,6 +156,64 @@ def clean_cell(cell: str) -> str:
     return cell
 
 
+def _extract_name_from_inscription(inscr_cell: str | None) -> str:
+    """Extract the person's name from the raw inscription wikitext.
+
+    The stone inscription has the format "Hier wohnte\\nFirstname Lastname"
+    possibly with nicknames in quotes or titles like "Dr.". We parse this
+    to get a clean "Firstname Lastname" (or "Firstname 'Nickname' Lastname") string.
+    """
+    if not inscr_cell:
+        return ""
+
+    # Split into lines and find the name section after "Hier wohnte"
+    lines = inscr_cell.split('\n')
+    start_idx = None
+    for i, line in enumerate(lines):
+        if 'Hier wohnte' in line:
+            start_idx = i + 1
+            break
+
+    if start_idx is None:
+        return ""
+
+    # Collect name lines until we hit metadata keywords
+    name_lines = []
+    for line in lines[start_idx:]:
+        stripped = line.strip()
+        if re.match(r'^(Jg\.|Geb\.|Verh\.|Gesch\.|Eingewiesen|Flucht|Deportiert|Ermordet|tot|Tot|Umzug|Heirat|Schicksal|Polenaktion)', stripped, re.IGNORECASE):
+            break
+        if not stripped:
+            continue
+        name_lines.append(stripped)
+
+    if not name_lines:
+        return ""
+
+    # Join and clean up
+    full_name = ' '.join(name_lines)
+    full_name = re.sub(r"'''", '', full_name)
+    # Convert backtick quotes to German quotes
+    full_name = re.sub(r"`([^`]*?)´", r'„\1"', full_name)
+    full_name = re.sub(r"`([^`]*?)'", r'„\1"', full_name)
+    return full_name.strip()
+
+
+def _fallback_name(row_id: str | None) -> str:
+    """Fallback name extraction from Wikipedia table ID.
+
+    IDs are "Lastname First1 First2..." → "First1 First2... Lastname".
+    Strips titles (Dr.) and standalone years.
+    """
+    raw = (row_id or "").strip().replace("_", " ")
+    parts = [p for p in raw.split() if not re.match(r'^[12]\d{3}$', p) and p != 'Dr.']
+    parts = [re.sub(r'„[^"]*"', '', p).strip() for p in parts]
+    parts = [p for p in parts if p]
+    if len(parts) <= 1:
+        return raw
+    return " ".join(parts[1:] + [parts[0]])
+
+
 def parse_page(district: str, title: str, wikitext: str) -> list[dict]:
     # narrow to the table containing the entries
     # the table starts with `{| class="wikitable sortable"` (or similar) after `== Verlegte Stolpersteine ==`
@@ -232,8 +290,10 @@ def parse_page(district: str, title: str, wikitext: str) -> list[dict]:
             if m:
                 image = m.group(1).strip().replace(" ", "_")
 
-        name = (row_id or "").strip().replace("_", " ")
-        inscription = strip_wikitext(inscr_cell)
+        inscription_raw = strip_wikitext(inscr_cell)
+        # Extract name from inscription — the stone text is the ground truth.
+        # Pattern: "Hier wohnte" followed by name lines, then metadata (Jg., Geb., etc.)
+        name = _extract_name_from_inscription(inscription_raw) or _fallback_name(row_id)
         bio_text = strip_wikitext(bio_cell) if bio_cell else ""
 
         entries.append({
@@ -243,7 +303,7 @@ def parse_page(district: str, title: str, wikitext: str) -> list[dict]:
             "lat": cur_lat,
             "lng": cur_lng,
             "install_date": cur_date,
-            "inscription": inscription,
+            "inscription": inscription_raw,
             "image": image,
             "bio": bio_text,
             "district": district,
