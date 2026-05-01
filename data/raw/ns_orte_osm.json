@@ -1,0 +1,282 @@
+[
+  {
+    "id": "ns-denkmal-erinnerung-an-das-kriegsgefangenenlager-wickrathberg-osm-n256517799",
+    "name": "Denkmal Erinnerung an das Kriegsgefangenenlager Wickrathberg",
+    "category": "pow_camp_memorial",
+    "lat": 51.1105421,
+    "lng": 6.4240896,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/256517799",
+    "raw_tags": {
+      "historic": "memorial",
+      "name": "Denkmal Erinnerung an das Kriegsgefangenenlager Wickrathberg"
+    }
+  },
+  {
+    "id": "ns-gedenkstein-f-d-synagoge-osm-n299070845",
+    "name": "Gedenkstein f.d. Synagoge",
+    "category": "synagogue_memorial",
+    "lat": 51.1703962,
+    "lng": 6.4418648,
+    "address": "",
+    "description": "Den verfolgten und ermordeten jüdischen Bürgern unserer Stadt Zur Erinnerung an die am 10. November 1938 zerstörte Rheydter Synagoge.",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "File:Rheydt, Jüdische Gedenkstätte.jpg",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/299070845",
+    "raw_tags": {
+      "historic": "memorial",
+      "name": "Gedenkstein f.d. Synagoge"
+    }
+  },
+  {
+    "id": "ns-gedenkstein-ehemaliger-juedischer-friedhof-wanlo-osm-n5388518553",
+    "name": "Gedenkstein Ehemaliger jüdischer Friedhof Wanlo",
+    "category": "jewish_cemetery",
+    "lat": 51.1059564,
+    "lng": 6.4217812,
+    "address": "",
+    "description": "Zum Ewigen Gedenken Seit dem 17. Jahrhunder war eine kleine Zahl jüdischer Bürger in Wanlo ansässig. Ihre Verstorbenen wurden auf diesem Friedhof beigesetzt. In den Wirren des 2. Weltkrieges wurde der Friedhof entfremdet und die Grabsteine zerstört. (...)",
+    "wikipedia": "",
+    "wikidata": "Q118591090",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/5388518553",
+    "raw_tags": {
+      "historic": "memorial",
+      "memorial": "stone",
+      "name": "Gedenkstein Ehemaliger jüdischer Friedhof Wanlo"
+    }
+  },
+  {
+    "id": "ns-gedenktafel-juedische-buerger-osm-n9312619435",
+    "name": "Gedenktafel jüdische Bürger",
+    "category": "jewish_site",
+    "lat": 51.1967797,
+    "lng": 6.4449345,
+    "address": "",
+    "description": "Zum Gedenken an die Jüdischen Bürger ...",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/9312619435",
+    "raw_tags": {
+      "historic": "memorial",
+      "memorial": "plaque"
+    }
+  },
+  {
+    "id": "ns-stolperschwelle-osm-n9346644879",
+    "name": "Stolperschwelle",
+    "category": "stolperschwelle",
+    "lat": 51.1688639,
+    "lng": 6.4402977,
+    "address": "",
+    "description": "Stolperschwelle Friedrich-Ebert-Straße 82–84",
+    "wikipedia": "de:Liste der Stolpersteine in Mönchengladbach – Stadtbezirk Süd",
+    "wikidata": "",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Stolperschwelle_MG_Friedrich-Ebert-Stra%C3%9Fe_82%E2%80%9384.jpg",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/9346644879",
+    "raw_tags": {
+      "historic": "memorial",
+      "memorial": "stolperschwelle"
+    }
+  },
+  {
+    "id": "ns-ns-opfer-gedenkort-osm-n13342366402",
+    "name": "NS-Opfer-Gedenkort",
+    "category": "ns_victim_memorial",
+    "lat": 51.1615678,
+    "lng": 6.4442714,
+    "address": "",
+    "description": "Denkmal für die Geflüchteten u: Vertriebene des 2. Weltkriegs ( Gestiftet vom Bund der Vertriebenen MGm)",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/node/13342366402",
+    "raw_tags": {
+      "historic": "memorial",
+      "memorial": "stone;plaque"
+    }
+  },
+  {
+    "id": "ns-ehem-luftschutzbunker-luerrip-osm-w41850578",
+    "name": "Ehem. Luftschutzbunker Lürrip",
+    "category": "bunker",
+    "lat": 51.2030661,
+    "lng": 6.4805117,
+    "address": "",
+    "description": "",
+    "wikipedia": "de:Ehemaliger Luftschutzbunker (Lürrip)",
+    "wikidata": "",
+    "image": "https://de.wikipedia.org/wiki/Ehemaliger_Luftschutzbunker_(L%C3%BCrrip)#/media/Datei:M%C3%B6nchengladbach-L%C3%BCrrip_Denkmal-Nr._N_019,_Neusser_Stra%C3%9Fe_374_(6145).jpg",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/41850578",
+    "raw_tags": {
+      "historic": "yes",
+      "name": "Ehem. Luftschutzbunker Lürrip"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w263479455",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1822971,
+    "lng": 6.4829763,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/263479455",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w263479461",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1822046,
+    "lng": 6.4832544,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/263479461",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w263479468",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1820656,
+    "lng": 6.4827537,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/263479468",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w263479504",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1821028,
+    "lng": 6.4831786,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/263479504",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w308855273",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.181586,
+    "lng": 6.4816938,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/308855273",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w308855274",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1827469,
+    "lng": 6.4814104,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/308855274",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w308855275",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1828609,
+    "lng": 6.481654,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/308855275",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w998329020",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1823453,
+    "lng": 6.4808729,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/998329020",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  },
+  {
+    "id": "ns-luftschutzbunker-osm-w1473401949",
+    "name": "Luftschutzbunker",
+    "category": "bunker",
+    "lat": 51.1892476,
+    "lng": 6.4790307,
+    "address": "",
+    "description": "",
+    "wikipedia": "",
+    "wikidata": "",
+    "image": "",
+    "source": "osm",
+    "source_url": "https://www.openstreetmap.org/way/1473401949",
+    "raw_tags": {
+      "military": "bunker"
+    }
+  }
+]

@@ -1,0 +1,172 @@
+[
+  {
+    "id": "person-q74105",
+    "name": "Helmut Dörner",
+    "category": "perpetrator_site",
+    "lat": 51.18480608060465,
+    "lng": 6.452082973978652,
+    "address": "",
+    "description": "Helmut Dörner war ein deutscher Offizier der Schutzpolizei sowie der Schutzstaffel und Waffen-SS im Zweiten Weltkrieg. Bei Kriegsende bekleidete er den Dienstrang eines SS-Oberführers. Dörner war einer von zwanzig Angehörigen der Waffen-SS, denen das Ritterkreuz des Eisernen Kreuzes mit Eichenlaub und Schwerter verliehen worden ist. Er war 1944 in Griechenland für zahlreiche Kriegsverbrechen gegenüber der dortigen Zivilbevölkerung verantwortlich.",
+    "image": null,
+    "wikidata": "Q74105",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Helmut_D%C3%B6rner",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1909 – 1945"
+  },
+  {
+    "id": "person-q2806475",
+    "name": "Walther Kaldewey",
+    "category": "perpetrator_site",
+    "lat": 51.196027664401754,
+    "lng": 6.460831807123114,
+    "address": "",
+    "description": "Walther Kaldewey war ein deutscher Psychiater, der als T4-Gutachter in die nationalsozialistischen Euthanasieverbrechen involviert war.",
+    "image": null,
+    "wikidata": "Q2806475",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Walther_Kaldewey",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1896 – 1954"
+  },
+  {
+    "id": "person-q1286740",
+    "name": "Edmund Pulheim",
+    "category": "perpetrator_site",
+    "lat": 51.19785028130018,
+    "lng": 6.435167392608552,
+    "address": "",
+    "description": "Edmund Pulheim war ein deutscher Fußballspieler und erster Präsident von Borussia Mönchengladbach in der Nachkriegszeit.",
+    "image": null,
+    "wikidata": "Q1286740",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Edmund_Pulheim",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1900"
+  },
+  {
+    "id": "person-q14830878",
+    "name": "Max Riese",
+    "category": "perpetrator_site",
+    "lat": 51.20495053183254,
+    "lng": 6.45530886481053,
+    "address": "",
+    "description": "Max Gustav Riese war ein deutscher Drogist, Unternehmer und Erfinder der Penaten-Creme.",
+    "image": null,
+    "wikidata": "Q14830878",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Max_Riese",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1868 – 1943"
+  },
+  {
+    "id": "person-q1598175",
+    "name": "Heinrich Lersch",
+    "category": "perpetrator_site",
+    "lat": 51.194344844231416,
+    "lng": 6.455425816093477,
+    "address": "",
+    "description": "Heinrich Lersch war ein deutscher Arbeiterdichter.",
+    "image": "Heinrich_Lersch_1933.jpg",
+    "wikidata": "Q1598175",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Heinrich_Lersch",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1889 – 1936"
+  },
+  {
+    "id": "person-q1460407",
+    "name": "Friedrich Klausing",
+    "category": "perpetrator_site",
+    "lat": 51.183948447864076,
+    "lng": 6.452342882204608,
+    "address": "",
+    "description": "Friedrich Hermann Klausing war ein deutscher Jurist und Hochschullehrer.",
+    "image": null,
+    "wikidata": "Q1460407",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Friedrich_Klausing",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1887 – 1944"
+  },
+  {
+    "id": "person-q2419055",
+    "name": "Theophil Hackethal",
+    "category": "perpetrator_site",
+    "lat": 51.19432893360446,
+    "lng": 6.465605977324944,
+    "address": "",
+    "description": "Theophil Hackethal war ein deutscher Mediziner. Er war Mitglied der SS und von 1941 bis 1945 Vertragsarzt im SS-Sonderlager Hinzert. Zunächst als Kriegsverbrecher verurteilt, wurde er 1952 begnadigt.",
+    "image": null,
+    "wikidata": "Q2419055",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Theophil_Hackethal",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1883 – 1959"
+  },
+  {
+    "id": "person-q62642",
+    "name": "Richard Glücks",
+    "category": "perpetrator_site",
+    "lat": 51.182768934048475,
+    "lng": 6.443502171694949,
+    "address": "",
+    "description": "Richard Glücks war ein deutscher SS-Gruppenführer und Generalleutnant der Waffen-SS. Ab November 1939 war Glücks Leiter der Inspektion der Konzentrationslager, zunächst im SS-Führungshauptamt der Waffen-SS, ab März 1942 im SS-Wirtschafts- und Verwaltungshauptamt.",
+    "image": "Richard_Gl%C3%BCcks.jpg",
+    "wikidata": "Q62642",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Richard_Gl%C3%BCcks",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1889 – 1945"
+  },
+  {
+    "id": "person-q15071328",
+    "name": "Bruno Kittel",
+    "category": "perpetrator_site",
+    "lat": 51.20018128455253,
+    "lng": 6.45656622182025,
+    "address": "",
+    "description": "Otto Max Bruno Kittel war ein deutscher Chorleiter und Violinist.",
+    "image": "Bruno_Kittel_1926.jpg",
+    "wikidata": "Q15071328",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Bruno_Kittel_(Musiker)",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1870 – 1948"
+  },
+  {
+    "id": "person-q1529893",
+    "name": "Hans Wolfgang Hillers",
+    "category": "perpetrator_site",
+    "lat": 51.19421583980245,
+    "lng": 6.46454326088365,
+    "address": "",
+    "description": "Hans Wolfgang Hillers war ein deutscher Schriftsteller. Er war als Redakteur in Berlin ansässig. In den Dreißigerjahren lebte er zeitweise mit seiner Cousine Marta Hillers zusammen, der als „Anonyma“ bekannten Verfasserin von Eine Frau in Berlin. Hillers verfasste vorwiegend Theaterstücke sowie Drehbücher für Spielfilme der Ufa.",
+    "image": null,
+    "wikidata": "Q1529893",
+    "source": "wikidata",
+    "source_url": "https://de.wikipedia.org/wiki/Hans_Wolfgang_Hillers",
+    "roles": [
+      "NSDAP"
+    ],
+    "lifespan": "1901 – 1952"
+  }
+]
