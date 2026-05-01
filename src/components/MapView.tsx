@@ -942,6 +942,48 @@ export function MapView() {
     );
   }, [currentDate]);
 
+  // Sync sidebar selection with URL query params for shareable links.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTheme = params.get("theme");
+    const urlId = params.get("id");
+    if (urlTheme && urlId) {
+      setSelection({
+        theme: urlTheme as ThemeId,
+        id: urlId,
+        contentDir: contentDirFor(urlTheme as ThemeId),
+      });
+    }
+
+    function onPopState() {
+      const p = new URLSearchParams(window.location.search);
+      const t = p.get("theme");
+      const i = p.get("id");
+      if (t && i) {
+        setSelection({
+          theme: t as ThemeId,
+          id: i,
+          contentDir: contentDirFor(t as ThemeId),
+        });
+      } else if (selectionRef.current !== null) {
+        setSelection(null);
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selection) {
+      params.set("theme", selection.theme);
+      params.set("id", selection.id);
+    }
+    const qs = params.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    window.history.replaceState({}, "", url);
+  }, [selection]);
+
   // Cinematic deportation-mode transition — per-arc trace animation.
   useEffect(() => {
     const map = mapRef.current;
