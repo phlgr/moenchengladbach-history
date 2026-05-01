@@ -113,7 +113,6 @@ content/                           ← built by merge.py: per-locale, per-theme 
 │   └── strassen/<slug>.md
 └── en/                            ← English translations (fewer; fall back to DE)
 
-app/                               ← TanStack Start (Bun + Nitro static preset)
 public/
 ├── data/
 │   ├── stolpersteine.geojson      ← built by geojson.py
@@ -153,7 +152,7 @@ Same framework as upstream — only hosting and image storage change.
 Commons asks projects not to hotlink at scale, GitHub Pages has no signed-URL story, and we want the site to render even if Commons is rate-limiting. So:
 
 1. `scripts/images.py` reads each merged content entry, downloads the Commons original to `data/images_raw/` (gitignored, cached by hash).
-2. Resizes to **600 px webp at q≈80** (~50–100 KB) into `app/public/images/<theme>/<id>.webp` — **committed to git**.
+2. Resizes to **600 px webp at q≈80** (~50–100 KB) into `public/images/<theme>/<id>.webp` — **committed to git**.
 3. Writes per-image attribution (author, license, source URL) into the entry's frontmatter so the UI can display credits.
 4. **Lightbox** loads the **original from Commons** lazily (`upload.wikimedia.org/...`) only when the user opens it — that's a single request per click, well within fair use, and keeps the repo small.
 
@@ -203,8 +202,8 @@ Streets-as-lines is new vs Frankfurt (which is points-only): the named-streets l
    - Read-only against public APIs, respects rate limits (Overpass: chunk by category; Wikipedia: `maxlag`; Wikidata: 5 r/s; Commons: 1 r/s with `User-Agent`).
 
 2. **`deploy.yml`** — on push to `main`.
-   - `cd app && bun install && bun run build`.
-   - Publishes `app/dist/` to the `gh-pages` branch via `actions/deploy-pages`.
+    - `bun install && bun run build`.
+    - Publishes `dist/` to the `gh-pages` branch via `actions/deploy-pages`.
 
 DNS: a custom domain (`mg-history.de` or similar) via `CNAME` in `public/`. HTTPS auto-provisioned by Pages.
 

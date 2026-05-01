@@ -26,13 +26,13 @@ Uses [mise](https://mise.jdx.dev/) for tool versions (`bun`, `node`, `python`, `
 ```bash
 mise install
 uv sync                  # python deps
-cd app && bun install
+bun install
 ```
 
 ## Run
 
 ```bash
-cd app && bun run dev    # http://localhost:5173
+bun run dev    # http://localhost:5173
 ```
 
 `bun run dev` runs the data build (`scripts/build_geojson.py` + `scripts/build_deportations.py`) before starting Vite, so the map always has fresh data.
@@ -42,8 +42,8 @@ cd app && bun run dev    # http://localhost:5173
 One-shot: re-run every fetcher, then rebuild the GeoJSON.
 
 ```bash
-cd app && bun run fetch:all
-cd app && bun run build:data
+bun run fetch:all
+bun run build:data
 ```
 
 Individual fetchers (idempotent, all live under `fetchers/`):
@@ -58,7 +58,7 @@ uv run python3 fetchers/osm_wikipedia.py           # OSM features tagged with wi
 uv run python3 fetchers/wikidata_ns_persons.py     # Wikidata bios for perpetrators / namesakes
 ```
 
-Outputs land in `data/raw/` (gitignored). The build scripts read from `data/raw/` + `overrides/` and write to `app/public/data/`.
+Outputs land in `data/raw/` (gitignored). The build scripts read from `data/raw/` + `overrides/` and write to `public/data/`.
 
 ## Layout
 
@@ -69,11 +69,10 @@ overrides/     # hand-curated entries — committed
   ns_orte/curated.json
   renamed_streets/curated.json
 scripts/       # data build pipeline (build_geojson.py, build_deportations.py)
-app/           # TanStack Start web app
-  src/components/   MapView, Sidebar, LayerToggle, DeportationToggle, Timeline
-  src/lib/          themes, layerState, mapStyle, useReducedMotion
-  public/data/      built GeoJSON (gitignored) + per-POI content JSON
-  public/map-assets/  basemap.pmtiles, sprites, fonts (committed)
+src/components/   MapView, Sidebar, LayerToggle, DeportationToggle, Timeline
+src/lib/          themes, layerState, mapStyle, useReducedMotion
+public/data/      built GeoJSON (gitignored) + per-POI content JSON
+public/map-assets/  basemap.pmtiles, sprites, fonts (committed)
 ```
 
 ## Quality checks
@@ -81,10 +80,10 @@ app/           # TanStack Start web app
 Run on every commit via `lefthook.yml`:
 
 ```bash
-cd app && bun run lint       # biome
-cd app && bun run format     # biome --write
-cd app && bun run typecheck  # tsc --noEmit
-cd app && bun run knip       # unused exports / files
+bun run lint       # biome
+bun run format     # biome --write
+bun run typecheck  # tsc --noEmit
+bun run knip       # unused exports / files
 ```
 
 ## Map assets (basemap.pmtiles, sprites, fonts)
@@ -102,7 +101,7 @@ SRC_URL=https://demo-bucket.protomaps.com/v4.pmtiles
 TMP=$(mktemp -d) && \
 pmtiles extract "$SRC_URL" "$TMP/mg.pmtiles" --bbox="6.30,51.05,6.65,51.32" --minzoom=8 --maxzoom=14 && \
 pmtiles extract "$SRC_URL" "$TMP/eu.pmtiles" --bbox="-2,44,32,60" --minzoom=0 --maxzoom=7 && \
-pmtiles merge "$TMP/eu.pmtiles" "$TMP/mg.pmtiles" app/public/map-assets/basemap.pmtiles && \
+pmtiles merge "$TMP/eu.pmtiles" "$TMP/mg.pmtiles" public/map-assets/basemap.pmtiles && \
 rm -rf "$TMP"
 ```
 
@@ -111,7 +110,7 @@ rm -rf "$TMP"
 ```bash
 curl -sL https://codeload.github.com/protomaps/basemaps-assets/tar.gz/refs/heads/main \
   | tar -xzf - -C /tmp && \
-  SRC=/tmp/basemaps-assets-main DEST=app/public/map-assets && \
+  SRC=/tmp/basemaps-assets-main DEST=public/map-assets && \
   mkdir -p "$DEST/sprites/v4" "$DEST/fonts" && \
   cp "$SRC/sprites/v4/light"{.json,.png,@2x.json,@2x.png} "$DEST/sprites/v4/" && \
   cp -r "$SRC/fonts/Noto Sans "{Regular,Italic,Medium} "$DEST/fonts/"
