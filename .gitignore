@@ -8,6 +8,7 @@ data/images_raw/
 dist/
 .tanstack/
 .nitro/
+.vite/
 node_modules/
 public/data/*.geojson
 public/data/content/

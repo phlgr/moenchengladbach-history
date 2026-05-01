@@ -5,6 +5,7 @@ import type {
   Map as MlMap,
 } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { path } from "../lib/assets";
 import { useLayerState } from "../lib/layerState";
 import { createMapStyle } from "../lib/mapStyle";
 import { THEMES, type ThemeId } from "../lib/themes";
@@ -331,7 +332,7 @@ export function MapView() {
       map.on("load", async () => {
         await Promise.all(
           ORDERED_THEMES.map(async (theme) => {
-            const res = await fetch(`/data/${theme}.geojson`);
+            const res = await fetch(path(`data/${theme}.geojson`));
             if (!res.ok) return;
             const fc = (await res.json()) as GeoJSON.FeatureCollection;
             if (cancelled) return;
@@ -378,8 +379,8 @@ export function MapView() {
 
       async function loadDeportationLayers(map: MlMap) {
         const [arcsRes, destRes] = await Promise.all([
-          fetch("/data/deportations.geojson"),
-          fetch("/data/deportation-destinations.geojson"),
+          fetch(path("data/deportations.geojson")),
+          fetch(path("data/deportation-destinations.geojson")),
         ]);
         if (!arcsRes.ok || !destRes.ok) return;
         const arcs = await arcsRes.json();

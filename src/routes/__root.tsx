@@ -15,6 +15,7 @@ import "@fontsource/dm-mono/400.css";
 import "@fontsource/dm-mono/400-italic.css";
 import "@fontsource/dm-mono/500.css";
 import "../styles.css";
+import { path } from "../lib/assets";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -29,7 +30,7 @@ export const Route = createRootRoute({
       },
       { title: "Mönchengladbach History" },
     ],
-    links: [{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
+    links: [{ rel: "icon", type: "image/svg+xml", href: path("favicon.svg") }],
   }),
   component: RootComponent,
 });

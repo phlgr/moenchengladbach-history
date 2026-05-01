@@ -1,5 +1,6 @@
 import type { StyleSpecification } from "maplibre-gl";
 import { layersWithPartialCustomTheme } from "protomaps-themes-base";
+import { path } from "./assets";
 
 /**
  * PMTiles archive — served from the app's own public directory so the
@@ -17,7 +18,7 @@ type ImportMetaEnv = {
   VITE_PMTILES_URL?: string;
 };
 const env = (import.meta as { env?: ImportMetaEnv }).env ?? {};
-const PMTILES_URL = env.VITE_PMTILES_URL ?? "/map-assets/basemap.pmtiles";
+const PMTILES_URL = env.VITE_PMTILES_URL ?? path("map-assets/basemap.pmtiles");
 
 const archivalTheme = {
   background: "#FAF8F5",
@@ -114,8 +115,8 @@ const archivalTheme = {
 export function createMapStyle(): StyleSpecification {
   return {
     version: 8,
-    sprite: "/map-assets/sprites/v4/light",
-    glyphs: "/map-assets/fonts/{fontstack}/{range}.pbf",
+    sprite: path("map-assets/sprites/v4/light"),
+    glyphs: path("map-assets/fonts/{fontstack}/{range}.pbf"),
     sources: {
       protomaps: {
         type: "vector",

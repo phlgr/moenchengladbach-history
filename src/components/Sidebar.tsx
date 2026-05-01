@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { path } from "../lib/assets";
 import type { ThemeId } from "../lib/themes";
 
 type Stolperstein = {
@@ -254,7 +255,7 @@ export function Sidebar({
     setError(null);
     setLoading(true);
 
-    fetch(`/data/content/${selection.contentDir}/${selection.id}.json`)
+    fetch(path(`data/content/${selection.contentDir}/${selection.id}.json`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
