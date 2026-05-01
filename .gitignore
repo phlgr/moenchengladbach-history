@@ -3,7 +3,6 @@ node_modules/
 __pycache__/
 *.pyc
 .DS_Store
-data/raw/
 data/images_raw/
 .output/
 dist/
