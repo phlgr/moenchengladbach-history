@@ -48,7 +48,10 @@
   html,
   body,
   #root {
-    height: 100%;
+    /* 100vh fallback for old WebViews; the @supports block below
+       upgrades to 100dvh so the layout adapts as iOS Safari's URL
+       bar grows/shrinks. */
+    height: 100vh;
     margin: 0;
     background: var(--color-paper);
     color: var(--color-ink);
@@ -57,6 +60,45 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  @supports (height: 100dvh) {
+    html,
+    body,
+    #root {
+      height: 100dvh;
+    }
+  }
+  body {
+    /* No rubber-band scroll past the map, no double-tap zoom on UI
+       chrome, no flash on tap. */
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Safe-area-inset utilities — applied to absolutely positioned chrome
+   so it never tucks behind the iPhone notch / home indicator / Android
+   3-button nav. Each padding is `max(local-padding, safe-area)` so the
+   inset only adds height when it actually exceeds the existing space. */
+@layer utilities {
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .pl-safe {
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+  .pr-safe {
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+  .top-safe {
+    top: env(safe-area-inset-top);
+  }
+  .bottom-safe {
+    bottom: env(safe-area-inset-bottom);
   }
 }
 
@@ -292,6 +334,19 @@
   border: 1px solid var(--color-paper-edge) !important;
   letter-spacing: 0.01em;
   max-width: min(80vw, 460px);
+}
+
+/* Lift built-in MapLibre controls clear of the iOS home indicator
+   and notch. The `bottom-left` and `top-right` control containers
+   are positioned by MapLibre — we just nudge them by the inset. */
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  margin-bottom: env(safe-area-inset-bottom);
+  margin-left: env(safe-area-inset-left);
+}
+.maplibregl-ctrl-top-right {
+  margin-top: env(safe-area-inset-top);
+  margin-right: env(safe-area-inset-right);
 }
 
 .maplibregl-ctrl-attrib a {

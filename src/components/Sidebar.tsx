@@ -295,8 +295,10 @@ export function Sidebar({
         open ? "translate-x-0 ease-out" : "translate-x-full ease-in"
       }`}
     >
-      {/* Index-tab top bar */}
-      <div className="relative flex items-center justify-between border-b border-paper-edge bg-paper-soft/60 px-5 py-3">
+      {/* Index-tab top bar — pt-safe lifts it clear of the iPhone
+          notch / status bar without leaving a void on browsers that
+          report a 0 inset. */}
+      <div className="relative flex items-center justify-between border-b border-paper-edge bg-paper-soft/60 px-5 py-3 pt-safe">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
@@ -318,19 +320,19 @@ export function Sidebar({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="group flex items-center gap-1.5 rounded-none border border-transparent px-1.5 py-1 text-faded transition-colors hover:border-paper-edge hover:bg-paper hover:text-ink"
+          className="group -mr-1.5 flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-none border border-transparent px-2.5 py-2 text-faded transition-colors hover:border-paper-edge hover:bg-paper hover:text-ink"
         >
           <span
-            className="akte-label"
+            className="akte-label hidden sm:inline"
             style={{ fontSize: "0.55rem", letterSpacing: "0.22em" }}
           >
             Esc
           </span>
-          <X className="h-4 w-4" strokeWidth={1.75} />
+          <X className="h-5 w-5" strokeWidth={1.75} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-safe">
         {loading && (
           <div className="flex flex-col items-center gap-3 px-5 py-16">
             <div aria-hidden className="h-px w-12 animate-pulse bg-sepia/60" />

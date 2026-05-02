@@ -62,8 +62,8 @@ function HomePage() {
         setAttributionExpanded,
       }}
     >
-      <main className="relative h-screen w-screen overflow-hidden">
-        <header className="pointer-events-none absolute left-0 top-0 z-10 flex w-[224px] flex-col gap-2 p-3 sm:w-auto sm:max-w-[280px] sm:gap-3 sm:p-5">
+      <main className="relative h-dvh w-screen overflow-hidden">
+        <header className="pointer-events-none absolute left-0 top-0 z-10 flex w-[min(60vw,224px)] flex-col gap-2 p-3 pl-safe pt-safe sm:w-auto sm:max-w-[280px] sm:gap-3 sm:p-5">
           <div className="akte-grain akte-reveal pointer-events-auto relative flex flex-col gap-1 border border-paper-edge bg-paper-light/95 px-4 pb-2 pt-2 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm sm:gap-2 sm:px-5 sm:pb-3 sm:pt-3">
             <div
               aria-hidden

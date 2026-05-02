@@ -26,7 +26,7 @@ export function LayerToggle() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls="layer-toggle-body"
-        className="flex w-full items-center justify-between gap-2 border-b border-paper-edge bg-paper-soft/70 px-4 py-1.5 text-left sm:cursor-default"
+        className="flex min-h-11 w-full items-center justify-between gap-2 border-b border-paper-edge bg-paper-soft/70 px-4 py-1.5 text-left sm:min-h-0 sm:cursor-default"
       >
         <span className="akte-label" style={{ fontSize: "0.52rem" }}>
           Filtern
@@ -55,8 +55,8 @@ export function LayerToggle() {
 
       <div
         id="layer-toggle-body"
-        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out sm:!max-h-none sm:!opacity-100 ${
-          open ? "max-h-[60vh] opacity-100" : "max-h-0 opacity-0"
+        className={`overflow-y-auto overscroll-contain transition-[max-height,opacity] duration-300 ease-out sm:!max-h-none sm:!opacity-100 sm:overflow-visible ${
+          open ? "max-h-[60dvh] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         {groups.map(({ group, themes }, gi) => {

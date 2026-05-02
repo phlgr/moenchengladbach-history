@@ -50,10 +50,11 @@ export function Timeline() {
   // collapsed (compact) form it is just an "i" icon and never reaches
   // the centered timeline. When the user expands it, the panel grows
   // tall enough to bump into the timeline strip on narrow viewports —
-  // lift the timeline a bit until it is closed again.
+  // lift the timeline a bit until it is closed again. The
+  // safe-area-inset-bottom term clears the iOS home indicator.
   const bottomOffset = attributionExpanded
-    ? "bottom-[88px] sm:bottom-[72px]"
-    : "bottom-3 sm:bottom-5";
+    ? "bottom-[calc(88px+env(safe-area-inset-bottom))] sm:bottom-[calc(72px+env(safe-area-inset-bottom))]"
+    : "bottom-[calc(0.75rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))]";
 
   const idx = dateToMonthIndex(currentDate);
 
@@ -122,14 +123,14 @@ export function Timeline() {
 
   return (
     <div
-      className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-5rem))] -translate-x-1/2`}
+      className={`pointer-events-auto absolute ${bottomOffset} left-1/2 z-10 w-[min(680px,calc(100%-1.5rem))] -translate-x-1/2 sm:w-[min(680px,calc(100%-5rem))]`}
     >
-      <div className="akte-grain akte-reveal relative flex items-stretch gap-3 border border-paper-edge bg-paper-light/95 px-4 py-2.5 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm">
+      <div className="akte-grain akte-reveal relative flex items-stretch gap-2 border border-paper-edge bg-paper-light/95 px-3 py-2 shadow-[0_1px_0_rgba(28,24,20,0.05),0_8px_28px_rgba(28,24,20,0.10)] backdrop-blur-sm sm:gap-3 sm:px-4 sm:py-2.5">
         <button
           type="button"
           onClick={togglePlay}
           aria-label={playing ? "Pause" : "Abspielen"}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center border transition-colors ${
+          className={`flex h-11 w-11 shrink-0 items-center justify-center border transition-colors sm:h-9 sm:w-9 ${
             playing
               ? "border-red-oxide bg-red-oxide/10 text-red-oxide"
               : "border-paper-edge bg-paper text-ink hover:border-sepia hover:text-sepia"
@@ -200,7 +201,7 @@ export function Timeline() {
           type="button"
           onClick={reset}
           aria-label="Alle Jahre zeigen"
-          className={`flex shrink-0 items-center px-3 transition-colors ${
+          className={`flex min-h-11 shrink-0 items-center px-2.5 transition-colors sm:min-h-0 sm:px-3 ${
             showAll ? "text-faded-light" : "text-faded hover:text-ink"
           }`}
         >
