@@ -296,9 +296,11 @@ export function Sidebar({
       }`}
     >
       {/* Index-tab top bar — pt-safe lifts it clear of the iPhone
-          notch / status bar without leaving a void on browsers that
-          report a 0 inset. */}
-      <div className="relative flex items-center justify-between border-b border-paper-edge bg-paper-soft/60 px-5 py-3 pt-safe">
+          notch / status bar; pr-safe keeps the close button clear of
+          a notch when an iPhone is held landscape with the notch on
+          the right. Both utilities use a 12px floor so non-notched
+          browsers still get visual breathing room from the edge. */}
+      <div className="relative flex items-center justify-between border-b border-paper-edge bg-paper-soft/60 pb-3 pl-5 pr-safe pt-safe">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
@@ -320,7 +322,7 @@ export function Sidebar({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="group -mr-1.5 flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-none border border-transparent px-2.5 py-2 text-faded transition-colors hover:border-paper-edge hover:bg-paper hover:text-ink"
+          className="group flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-none border border-transparent px-2.5 py-2 text-faded transition-colors hover:border-paper-edge hover:bg-paper hover:text-ink"
         >
           <span
             className="akte-label hidden sm:inline"

@@ -54,7 +54,7 @@ export function Timeline() {
   // safe-area-inset-bottom term clears the iOS home indicator.
   const bottomOffset = attributionExpanded
     ? "bottom-[calc(88px+env(safe-area-inset-bottom))] sm:bottom-[calc(72px+env(safe-area-inset-bottom))]"
-    : "bottom-[calc(0.75rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))]";
+    : "bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]";
 
   const idx = dateToMonthIndex(currentDate);
 

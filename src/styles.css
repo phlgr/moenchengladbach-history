@@ -79,27 +79,20 @@
 
 /* Safe-area-inset utilities — applied to absolutely positioned chrome
    so it never tucks behind the iPhone notch / home indicator / Android
-   3-button nav. Each padding is `max(local-padding, safe-area)` so the
-   inset only adds height when it actually exceeds the existing space. */
-@layer utilities {
-  .pt-safe {
-    padding-top: max(env(safe-area-inset-top), 0px);
-  }
-  .pb-safe {
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
-  }
-  .pl-safe {
-    padding-left: max(env(safe-area-inset-left), 0px);
-  }
-  .pr-safe {
-    padding-right: max(env(safe-area-inset-right), 0px);
-  }
-  .top-safe {
-    top: env(safe-area-inset-top);
-  }
-  .bottom-safe {
-    bottom: env(safe-area-inset-bottom);
-  }
+   3-button nav. The min term inside `max()` is the visual breathing
+   room we want from the edge on devices without an inset (Android,
+   desktop). On notched iPhones the inset (often 47px+) takes over. */
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+@utility pl-safe {
+  padding-left: max(env(safe-area-inset-left), 0.75rem);
+}
+@utility pr-safe {
+  padding-right: max(env(safe-area-inset-right), 0.75rem);
 }
 
 /* Paper grain — applied to chrome surfaces (header card, layer toggle,
